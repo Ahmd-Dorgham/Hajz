@@ -192,3 +192,88 @@ export const changePassword = async (req, res, next) => {
     userId: user._id,
   });
 };
+// TODO: Solve it with the FE
+/**
+ * @api {POST} /users/forgot-password  Forgot Password
+ */
+// export const forgotPassword = async (req, res, next) => {
+//   const { email } = req.body;
+
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return next(new ErrorClass("User not found", 404, "No user found with this email"));
+//     }
+
+//     // Generate a reset token
+//     const resetToken = jwt.sign(
+//       { userId: user._id },
+//       process.env.RESET_SECRET,
+//       { expiresIn: "15m" } // Token valid for 15 minutes
+//     );
+
+//     await transporter.sendMail({
+//       to: email,
+//       subject: "Password Reset Request",
+//       html: `<p>You requested a password reset. Click the link below to reset your password:</p>
+//              <a href='http://localhost:3000/users/reset-password/${resetToken}'>Reset Password</a>
+//              <p>If you did not request this, please ignore this email.</p>`,
+//     });
+
+//     res.json({
+//       status: "success",
+//       message: "Password reset link has been sent to your email",
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+// TODO: Solve it with the FE
+// /**
+//  * @api {POST} /users/reset-password  Reset Password
+//  */
+// export const resetPassword = async (req, res, next) => {
+//   const { resetToken, newPassword } = req.body;
+
+//   // Verify the reset token
+//   const decoded = jwt.verify(resetToken, process.env.RESET_SECRET);
+
+//   const user = await User.findById(decoded.userId);
+//   if (!user) {
+//     return next(new ErrorClass("Invalid token or user not found", 404, "Invalid token or user not found"));
+//   }
+
+//   user.password = hashSync(newPassword, +process.env.SALT_ROUNDS);
+//   await user.save();
+
+//   res.json({
+//     status: "success",
+//     message: "Password has been reset successfully",
+//   });
+// };
+
+/**
+ * @api {DELETE} /users/delete-account  Delete Account
+ */
+export const deleteAccount = async (req, res, next) => {
+  const userId = req.authUser._id;
+
+  // Check if the user exists
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorClass("User not found", 404, "No user found with this ID"));
+  }
+
+  // Delete the user's profile image from Cloudinary
+  if (user.image?.public_id) {
+    await cloudinaryConfig().uploader.destroy(user.image.public_id);
+  }
+
+  // Delete the user's account from the database
+  await User.findByIdAndDelete(userId);
+
+  res.json({
+    status: "success",
+    message: "Your account has been deleted successfully",
+  });
+};

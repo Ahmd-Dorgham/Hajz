@@ -21,5 +21,10 @@ userRouter.put(
 );
 
 userRouter.patch("/change-password", auth(), errorHandler(controller.changePassword));
+// TODO: Solve it with the FE
+// userRouter.post("/forgot-password", errorHandler(controller.forgotPassword));
+// userRouter.post("/reset-password", errorHandler(controller.resetPassword));
+
+userRouter.delete("/delete-account", auth(), errorHandler(controller.deleteAccount));
 
 export { userRouter };
