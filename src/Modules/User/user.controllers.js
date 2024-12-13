@@ -258,22 +258,36 @@ export const changePassword = async (req, res, next) => {
 export const deleteAccount = async (req, res, next) => {
   const userId = req.authUser._id;
 
-  // Check if the user exists
   const user = await User.findById(userId);
   if (!user) {
     return next(new ErrorClass("User not found", 404, "No user found with this ID"));
   }
 
-  // Delete the user's profile image from Cloudinary
   if (user.image?.public_id) {
     await cloudinaryConfig().uploader.destroy(user.image.public_id);
   }
 
-  // Delete the user's account from the database
   await User.findByIdAndDelete(userId);
 
   res.json({
     status: "success",
     message: "Your account has been deleted successfully",
+  });
+};
+/**
+ * @api {GET} /users/profile  Get User Profile
+ */
+export const getUserProfile = async (req, res, next) => {
+  const userId = req.authUser._id;
+
+  // Find the user
+  const user = await User.findById(userId).select("-password"); // Exclude the password field
+  if (!user) {
+    return next(new ErrorClass("User not found", 404, "No user found with this ID"));
+  }
+
+  res.json({
+    status: "success",
+    user,
   });
 };

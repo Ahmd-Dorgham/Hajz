@@ -27,4 +27,6 @@ userRouter.patch("/change-password", auth(), errorHandler(controller.changePassw
 
 userRouter.delete("/delete-account", auth(), errorHandler(controller.deleteAccount));
 
+userRouter.get("/profile", auth(), errorHandler(controller.getUserProfile));
+
 export { userRouter };
