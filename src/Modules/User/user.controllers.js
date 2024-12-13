@@ -280,8 +280,7 @@ export const deleteAccount = async (req, res, next) => {
 export const getUserProfile = async (req, res, next) => {
   const userId = req.authUser._id;
 
-  // Find the user
-  const user = await User.findById(userId).select("-password"); // Exclude the password field
+  const user = await User.findById(userId).select("-password");
   if (!user) {
     return next(new ErrorClass("User not found", 404, "No user found with this ID"));
   }
