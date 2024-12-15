@@ -21,7 +21,7 @@ export const signUp = async (req, res, next) => {
   }
 
   const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-    folder: "Restaurant/profilePictures",
+    folder: "Restaurant/userProfilePictures",
   });
 
   const userInstance = new User({
@@ -126,7 +126,7 @@ export const updateUserProfile = async (req, res, next) => {
     }
 
     const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-      folder: "Restaurant/profilePictures",
+      folder: "Restaurant/userProfilePictures",
     });
 
     user.image.secure_url = secure_url;

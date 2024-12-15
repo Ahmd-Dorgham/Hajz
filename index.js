@@ -11,6 +11,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 app.use("/users", router.userRouter);
+app.use("/restaurants", router.restaurantRouter);
 
 app.use(globalResponse);
 
