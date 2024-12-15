@@ -13,4 +13,6 @@ tableRouter.delete("/delete/:id", auth(), controllers.deleteTable);
 
 tableRouter.get("/restaurant/:restaurantId", controllers.getAllTablesForRestaurant);
 
+tableRouter.get("/:id", controllers.getSpecificTable);
+
 export { tableRouter };

@@ -110,3 +110,21 @@ export const getAllTablesForRestaurant = async (req, res, next) => {
     tables,
   });
 };
+/**
+ * @api {GET} /tables/:id Get a Specific Table
+ */
+export const getSpecificTable = async (req, res, next) => {
+  const { id } = req.params;
+
+  const table = await Table.findById(id).populate("restaurantId", "name address phone");
+
+  if (!table) {
+    return next(new ErrorClass("Table not found", 404, "Invalid table ID"));
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Table retrieved successfully",
+    table,
+  });
+};
