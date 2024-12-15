@@ -10,6 +10,10 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.status(200).json({ msg: "hello on my project" });
+});
+
 app.use("/users", router.userRouter);
 app.use("/restaurants", router.restaurantRouter);
 app.use("/vip-rooms", router.vipRoomRouter);
