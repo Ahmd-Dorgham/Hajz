@@ -12,6 +12,7 @@ app.use(express.json());
 
 app.use("/users", router.userRouter);
 app.use("/restaurants", router.restaurantRouter);
+app.use("/vip-rooms", router.vipRoomRouter);
 
 app.use(globalResponse);
 
