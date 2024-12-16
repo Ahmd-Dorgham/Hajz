@@ -14,6 +14,7 @@ app.use("/users", router.userRouter);
 app.use("/restaurants", router.restaurantRouter);
 app.use("/vip-rooms", router.vipRoomRouter);
 app.use("/tables", router.tableRouter);
+app.use("/meals", router.mealRouter);
 
 app.use(globalResponse);
 
