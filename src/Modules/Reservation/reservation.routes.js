@@ -5,5 +5,9 @@ import * as controllers from "./reservation.controllers.js";
 const reservationRouter = Router();
 
 reservationRouter.post("/create", auth(), controllers.createReservation);
+reservationRouter.put("/update/:id", auth(), controllers.updateReservation);
+reservationRouter.delete("/delete/:id", auth(), controllers.deleteReservation);
+
+reservationRouter.get("/restaurant/:restaurantId", auth(), controllers.getAllReservationsForRestaurant);
 
 export { reservationRouter };

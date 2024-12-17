@@ -62,3 +62,97 @@ export const createReservation = async (req, res, next) => {
     reservation: newReservation,
   });
 };
+/**
+ * @api {PUT} /reservations/update/:id Update a Reservation
+ */
+export const updateReservation = async (req, res, next) => {
+  const { id } = req.params; // Reservation ID
+  const { date, time, status } = req.body;
+
+  //Find the reservation and check ownership
+  const reservation = await Reservation.findById(id);
+  if (!reservation) {
+    return next(new ErrorClass("Reservation not found", 404));
+  }
+
+  if (reservation.userId.toString() !== req.authUser._id.toString()) {
+    return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
+  }
+
+  if (date || time) {
+    const existingReservation = await Reservation.findOne({
+      tableId: reservation.tableId,
+      date: date || reservation.date,
+      time: time || reservation.time,
+      status: "reserved",
+      _id: { $ne: reservation._id }, // Exclude the current reservation
+    });
+
+    if (existingReservation) {
+      return next(new ErrorClass("Table is already reserved for the selected time", 400));
+    }
+  }
+
+  reservation.date = date || reservation.date;
+  reservation.time = time || reservation.time;
+  reservation.status = status || reservation.status;
+
+  const updatedReservation = await reservation.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Reservation updated successfully",
+    reservation: updatedReservation,
+  });
+};
+/**
+ * @api {DELETE} /reservations/delete/:id  Delete a Reservation
+ */
+export const deleteReservation = async (req, res, next) => {
+  const { id } = req.params; // Extract reservation ID from the URL parameters
+
+  const reservation = await Reservation.findById(id);
+  if (!reservation) {
+    return next(new ErrorClass("Reservation not found", 404, "Invalid reservation ID"));
+  }
+
+  if (reservation.userId.toString() !== req.authUser._id.toString()) {
+    return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
+  }
+
+  await Reservation.findByIdAndDelete(id);
+
+  res.status(200).json({
+    status: "success",
+    message: "Reservation deleted successfully",
+  });
+};
+
+/**
+ * @api {GET} /reservations/restaurant/:restaurantId  Get All Reservations for a Restaurant
+ */
+export const getAllReservationsForRestaurant = async (req, res, next) => {
+  const { restaurantId } = req.params; // Extract restaurantId from the URL parameters
+
+  const restaurant = await Restaurant.findById(restaurantId);
+  if (!restaurant) {
+    return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
+  }
+
+  // 2. Ensure the authenticated user owns the restaurant
+  if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
+    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+  }
+
+  const reservations = await Reservation.find({ restaurantId })
+    .populate("userId", "name email")
+    .populate("tableId", "tableNumber capacity")
+    .populate("mealId", "name price")
+    .sort({ date: 1, time: 1 }); // Sort by date and time (ascending)
+
+  res.status(200).json({
+    status: "success",
+    message: "All reservations fetched successfully",
+    reservations,
+  });
+};

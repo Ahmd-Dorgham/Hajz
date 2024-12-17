@@ -92,7 +92,7 @@ export const checkVerificationStatus = (req, res, next) => {
         message: user.isConfirmed ? "Email is verified" : "Email is not verified",
       });
     })
-    .catch((err) => next(err)); // Pass any database errors to the error handler
+    .catch((err) => next(err));
 };
 
 /**
