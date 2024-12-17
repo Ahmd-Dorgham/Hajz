@@ -29,12 +29,15 @@ const userSchema = new Schema(
       default: false,
     },
     image: {
-      secure_url: String,
-      public_id: String,
+      type: {
+        secure_url: { type: String, default: null },
+        public_id: { type: String, default: null },
+      },
+      default: null, // Set the whole `image` field to `null` if not provided
     },
   },
   { timestamps: true }
 );
 
-const User = model("User", userSchema);
-export default mongoose.models.User || User;
+const User = mongoose.models.User || model("User", userSchema);
+export default User;

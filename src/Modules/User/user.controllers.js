@@ -16,9 +16,9 @@ export const signUp = async (req, res, next) => {
   if (isEmailExists) {
     return next(new Error("Email already exists"));
   }
-  if (!req.file) {
-    return next(new Error("Please upload the profile picture"));
-  }
+  // if (!req.file) {
+  //   return next(new Error("Please upload the profile picture"));
+  // }
 
   const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
     folder: "Restaurant/userProfilePictures",
@@ -40,7 +40,7 @@ export const signUp = async (req, res, next) => {
   await transporter.sendMail({
     to: email,
     subject: "Verify your Email ✔",
-    html: `<a href='http://localhost:3000/users/verify/${token}'>Click here to confirm your email</a>`,
+    html: `<a href='https://restaurant-reservation-sys.vercel.app//users/verify/${token}'>Click here to confirm your email</a>`,
   });
 
   const newUser = await userInstance.save();
