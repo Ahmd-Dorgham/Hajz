@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { multerHost } from "../../Middlewares/multer.middleware.js";
+import { multerHost, optionalUpload } from "../../Middlewares/multer.middleware.js";
 import { extensions } from "../../Utils/file-extensions.utils.js";
 import * as controller from "./user.controllers.js";
 import { auth } from "../../Middlewares/authentication.middleware.js";
@@ -7,7 +7,7 @@ import { errorHandler } from "../../Middlewares/error-handling.middleware.js";
 
 const userRouter = Router();
 
-userRouter.post("/signup", multerHost({ allowedExtensions: extensions.Images }).single("image"), controller.signUp);
+userRouter.post("/signup", optionalUpload, controller.signUp);
 
 userRouter.get("/verify/:token", controller.verifyEmail);
 
