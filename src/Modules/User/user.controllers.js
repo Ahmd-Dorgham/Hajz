@@ -27,7 +27,7 @@ export const signUp = async (req, res, next) => {
       image = { public_id: uploadResult.public_id, secure_url: uploadResult.secure_url };
     }
 
-    const saltRounds = Number(process.env.SALT_ROUNDS) || 10; // Default to 10 if not defined
+    const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
     const hashedPassword = hashSync(password, saltRounds);
 
     const userInstance = new User({
@@ -43,7 +43,7 @@ export const signUp = async (req, res, next) => {
     await transporter.sendMail({
       to: email,
       subject: "Verify your Email ✔",
-      html: `<a href='https://restaurant-reservation-sys.vercel.app/users/verify/${token}'>Click here to confirm your email</a>`,
+      html: `<a href='${process.env.DOMAIN}users/verify/${token}'>Click here to confirm your email</a>`,
     });
 
     const newUser = await userInstance.save();
