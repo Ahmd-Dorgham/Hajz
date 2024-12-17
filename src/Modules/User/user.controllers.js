@@ -119,8 +119,8 @@ export const signIn = async (req, res, next) => {
     {
       id: user._id,
     },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    process.env.JWT_SECRET
+    // { expiresIn: "1h" }
   );
 
   res.json({
@@ -180,8 +180,8 @@ export const updateUserProfile = async (req, res, next) => {
     {
       id: user._id,
     },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    process.env.JWT_SECRET
+    // { expiresIn: "1h" }
   );
 
   res.json({
@@ -239,7 +239,7 @@ export const changePassword = async (req, res, next) => {
 //     const resetToken = jwt.sign(
 //       { userId: user._id },
 //       process.env.RESET_SECRET,
-//       { expiresIn: "15m" } // Token valid for 15 minutes
+// { expiresIn: "15m" } // Token valid for 15 minutes
 //     );
 
 //     await transporter.sendMail({
