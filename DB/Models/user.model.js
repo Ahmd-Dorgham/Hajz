@@ -30,10 +30,10 @@ const userSchema = new Schema(
     },
     image: {
       type: {
-        secure_url: { type: String, default: null },
         public_id: { type: String, default: null },
+        secure_url: { type: String, default: null },
       },
-      default: null, // Set the whole `image` field to `null` if not provided
+      default: null,
     },
   },
   { timestamps: true }

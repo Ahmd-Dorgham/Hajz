@@ -9,43 +9,47 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 /**
  * @api {POST} /users/signup  signUp a new user
  */
+
 export const signUp = async (req, res, next) => {
-  const { email, password, name, phone } = req.body;
+  try {
+    const { email, password, name, phone } = req.body;
 
-  const isEmailExists = await User.findOne({ email });
-  if (isEmailExists) {
-    return next(new Error("Email already exists"));
+    // Check if email exists
+    const isEmailExists = await User.findOne({ email });
+    if (isEmailExists) return next(new Error("Email already exists"));
+
+    // Handle image upload
+    let image = null;
+    if (req.file) {
+      const uploadResult = await cloudinaryConfig().uploader.upload(req.file.path, {
+        folder: "Restaurant/userProfilePictures",
+      });
+      image = { public_id: uploadResult.public_id, secure_url: uploadResult.secure_url };
+    }
+
+    // Create user
+    const userInstance = new User({
+      email,
+      password: hashSync(password, +process.env.SALT_ROUNDS),
+      name,
+      phone,
+      image,
+    });
+
+    const token = jwt.sign({ _id: userInstance._id, email: userInstance.email }, process.env.CONFIRMATION_SECRET);
+
+    await transporter.sendMail({
+      to: email,
+      subject: "Verify your Email ✔",
+      html: `<a href='https://restaurant-reservation-sys.vercel.app/users/verify/${token}'>Click here to confirm your email</a>`,
+    });
+
+    const newUser = await userInstance.save();
+
+    res.status(201).json({ message: "User created", user: newUser });
+  } catch (error) {
+    next(error);
   }
-  // if (!req.file) {
-  //   return next(new Error("Please upload the profile picture"));
-  // }
-
-  const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-    folder: "Restaurant/userProfilePictures",
-  });
-
-  const userInstance = new User({
-    email,
-    password: hashSync(password, +process.env.SALT_ROUNDS),
-    name,
-    phone,
-    image: {
-      public_id,
-      secure_url,
-    },
-  });
-
-  const token = jwt.sign({ _id: userInstance._id, email: userInstance.email }, process.env.CONFIRMATION_SECRET);
-
-  await transporter.sendMail({
-    to: email,
-    subject: "Verify your Email ✔",
-    html: `<a href='https://restaurant-reservation-sys.vercel.app/users/verify/${token}'>Click here to confirm your email</a>`,
-  });
-
-  const newUser = await userInstance.save();
-
-  res.status(201).json({ message: "User created", user: newUser });
 };
 
 /**
