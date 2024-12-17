@@ -40,7 +40,7 @@ export const signUp = async (req, res, next) => {
   await transporter.sendMail({
     to: email,
     subject: "Verify your Email ✔",
-    html: `<a href='https://restaurant-reservation-sys.vercel.app//users/verify/${token}'>Click here to confirm your email</a>`,
+    html: `<a href='https://restaurant-reservation-sys.vercel.app/users/verify/${token}'>Click here to confirm your email</a>`,
   });
 
   const newUser = await userInstance.save();
