@@ -239,7 +239,7 @@ export const changePassword = async (req, res, next) => {
 //     const resetToken = jwt.sign(
 //       { userId: user._id },
 //       process.env.RESET_SECRET,
-// { expiresIn: "15m" } // Token valid for 15 minutes
+//       { expiresIn: "15m" } // Token valid for 15 minutes
 //     );
 
 //     await transporter.sendMail({
