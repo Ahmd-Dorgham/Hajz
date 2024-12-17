@@ -11,6 +11,8 @@ userRouter.post("/signup", optionalUpload, controller.signUp);
 
 userRouter.get("/verify/:token", controller.verifyEmail);
 
+userRouter.get("/verify-status", controller.checkVerificationStatus);
+
 userRouter.post("/signin", controller.signIn);
 
 userRouter.put(

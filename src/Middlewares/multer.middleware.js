@@ -75,7 +75,7 @@ export const multerHost = ({ allowedExtensions = extensions.Images }) => {
   return multer({ fileFilter, storage });
 };
 
-//for restaurant project
+//for parsing without sending images
 export const optionalUpload = (req, res, next) => {
   // Run multerHost single upload middleware
   multerHost({ allowedExtensions: ["image/jpeg", "image/png", "image/jpg"] }).single("image")(req, res, (err) => {

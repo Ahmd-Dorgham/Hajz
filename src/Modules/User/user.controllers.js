@@ -70,6 +70,30 @@ export const verifyEmail = async (req, res, next) => {
 
   res.json({ message: "Email confirmed successfully", user: updatedUser });
 };
+/**
+ * @api {GET} /users/verify-status  Check user verification status
+ */
+export const checkVerificationStatus = (req, res, next) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return next(new ErrorClass("Email is required", 400, "Email is required"));
+  }
+
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return next(new ErrorClass("User not found", 404, "No user found with the provided email"));
+      }
+
+      res.status(200).json({
+        status: "success",
+        isConfirmed: user.isConfirmed,
+        message: user.isConfirmed ? "Email is verified" : "Email is not verified",
+      });
+    })
+    .catch((err) => next(err)); // Pass any database errors to the error handler
+};
 
 /**
  * @api {POST} /users/signin  Sign in the user
