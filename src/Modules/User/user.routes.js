@@ -7,7 +7,7 @@ import { errorHandler } from "../../Middlewares/error-handling.middleware.js";
 
 const userRouter = Router();
 
-userRouter.post("/signup", multerHost({ allowedExtensions: extensions.Images }).single("image"), controller.signUp);
+userRouter.post("/signup", controller.signUp);
 
 userRouter.get("/verify/:token", controller.verifyEmail);
 

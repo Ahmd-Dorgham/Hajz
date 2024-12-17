@@ -9,16 +9,16 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 /**
  * @api {POST} /users/signup  signUp a new user
  */
-
 export const signUp = async (req, res, next) => {
   try {
     const { email, password, name, phone } = req.body;
 
-    // Check if email exists
+    if (!password) return next(new Error("Password is required"));
+    if (!email) return next(new Error("Email is required"));
+
     const isEmailExists = await User.findOne({ email });
     if (isEmailExists) return next(new Error("Email already exists"));
 
-    // Handle image upload
     let image = null;
     if (req.file) {
       const uploadResult = await cloudinaryConfig().uploader.upload(req.file.path, {
@@ -27,10 +27,12 @@ export const signUp = async (req, res, next) => {
       image = { public_id: uploadResult.public_id, secure_url: uploadResult.secure_url };
     }
 
-    // Create user
+    const saltRounds = Number(process.env.SALT_ROUNDS) || 10; // Default to 10 if not defined
+    const hashedPassword = hashSync(password, saltRounds);
+
     const userInstance = new User({
       email,
-      password: hashSync(password, +process.env.SALT_ROUNDS),
+      password: hashedPassword,
       name,
       phone,
       image,
@@ -187,7 +189,7 @@ export const changePassword = async (req, res, next) => {
     return next(new ErrorClass("New password cannot be the same as the old password", 400));
   }
 
-  user.password = hashSync(newPassword, +process.env.SALT_ROUNDS);
+  user.password = hashSync(newPassword, 5);
   await user.save();
 
   res.json({
