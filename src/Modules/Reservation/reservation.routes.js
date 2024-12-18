@@ -10,4 +10,12 @@ reservationRouter.delete("/delete/:id", auth(), controllers.deleteReservation);
 
 reservationRouter.get("/restaurant/:restaurantId", auth(), controllers.getAllReservationsForRestaurant);
 
+reservationRouter.patch("/status/:id", auth(), controllers.updateReservationStatus); //for the owner
+
+reservationRouter.get("/user", auth(), controllers.getAllReservationsForUser);
+
+reservationRouter.get("/table/:tableId", auth(), controllers.getReservationsForTable);
+
+reservationRouter.get("/:id", auth(), controllers.getSpecificReservation);
+
 export { reservationRouter };
