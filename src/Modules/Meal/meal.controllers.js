@@ -5,21 +5,16 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
 /**
  * @api {POST} /meals/create  Create a new Meal
- */
-export const createMeal = async (req, res, next) => {
+ */ export const createMeal = async (req, res) => {
   const { name, desc, price, restaurantId } = req.body;
-
-  if (!name || !price || !restaurantId) {
-    return next(new ErrorClass("Name, price, and restaurant ID are required", 400));
-  }
 
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
-    return next(new ErrorClass("Restaurant not found", 404));
+    return res.status(404).json({ message: "Restaurant not found" });
   }
 
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+    return res.status(403).json({ message: "Unauthorized" });
   }
 
   let image = null;
@@ -34,7 +29,7 @@ export const createMeal = async (req, res, next) => {
     name,
     image,
     desc,
-    price,
+    price: Number(price), // Ensure price is stored as a number
     restaurantId,
   });
 
@@ -46,25 +41,25 @@ export const createMeal = async (req, res, next) => {
     meal: newMeal,
   });
 };
+
 /**
  * @api {PUT} /meals/update/:id  Update a Meal
- */
-export const updateMeal = async (req, res, next) => {
-  const { id } = req.params; // Meal ID
+ */ export const updateMeal = async (req, res) => {
+  const { id } = req.params;
   const { name, desc, price } = req.body;
 
   const meal = await Meal.findById(id).populate("restaurantId");
   if (!meal) {
-    return next(new ErrorClass("Meal not found", 404));
+    return res.status(404).json({ message: "Meal not found" });
   }
 
   if (meal.restaurantId.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+    return res.status(403).json({ message: "Unauthorized" });
   }
 
   if (name) meal.name = name.trim();
   if (desc) meal.desc = desc.trim();
-  if (price) meal.price = Number(price);
+  if (price && !isNaN(Number(price))) meal.price = Number(price);
 
   if (req.file) {
     if (meal.image?.public_id) {
@@ -88,17 +83,16 @@ export const updateMeal = async (req, res, next) => {
 
 /**
  * @api {DELETE} /meals/delete/:id  Delete a Meal
- */
-export const deleteMeal = async (req, res, next) => {
-  const { id } = req.params; // Meal ID
+ */ export const deleteMeal = async (req, res) => {
+  const { id } = req.params;
 
   const meal = await Meal.findById(id).populate("restaurantId");
   if (!meal) {
-    return next(new ErrorClass("Meal not found", 404, "Invalid Meal ID"));
+    return res.status(404).json({ message: "Meal not found" });
   }
 
   if (meal.restaurantId.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+    return res.status(403).json({ message: "Unauthorized" });
   }
 
   if (meal.image?.public_id) {
@@ -115,27 +109,14 @@ export const deleteMeal = async (req, res, next) => {
 
 /**
  * @api {GET} /meals/restaurant/:restaurantId  Get All Meals for a Restaurant
- */
-export const getAllMealsForRestaurant = async (req, res, next) => {
+ */ export const getAllMealsForRestaurant = async (req, res) => {
   const { restaurantId } = req.params;
-
-  if (!restaurantId) {
-    return next(new ErrorClass("Restaurant ID is required", 400, "Missing restaurant ID"));
-  }
 
   const meals = await Meal.find({ restaurantId });
 
-  if (!meals.length) {
-    return res.status(200).json({
-      status: "success",
-      message: "No meals found for this restaurant",
-      meals: [],
-    });
-  }
-
   res.status(200).json({
     status: "success",
-    message: "Meals retrieved successfully",
+    message: meals.length ? "Meals retrieved successfully" : "No meals found for this restaurant",
     meals,
   });
 };
@@ -143,17 +124,13 @@ export const getAllMealsForRestaurant = async (req, res, next) => {
 /**
  * @api {GET} /meals/:id Get a Specific Meal
  */
-export const getMealById = async (req, res, next) => {
+export const getMealById = async (req, res) => {
   const { id } = req.params;
-
-  if (!id) {
-    return next(new ErrorClass("Meal ID is required", 400, "Missing meal ID"));
-  }
 
   const meal = await Meal.findById(id);
 
   if (!meal) {
-    return next(new ErrorClass("Meal not found", 404, "Invalid meal ID"));
+    return res.status(404).json({ message: "Meal not found" });
   }
 
   res.status(200).json({

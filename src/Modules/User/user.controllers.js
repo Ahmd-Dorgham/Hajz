@@ -6,56 +6,53 @@ import jwt from "jsonwebtoken";
 import { transporter } from "../../Services/send-email.service.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
 
-/**
- * @api {POST} /users/signup  signUp a new user
- */
 export const signUp = async (req, res, next) => {
-  try {
-    const { email, password, name, phone } = req.body;
+  const { email, password, name, phone, role } = req.body;
 
-    if (!password) return next(new Error("Password is required"));
-    if (!email) return next(new Error("Email is required"));
+  if (!password) return next(new ErrorClass("Password is required", 400));
+  if (!email) return next(new ErrorClass("Email is required", 400));
 
-    const isEmailExists = await User.findOne({ email });
-    if (isEmailExists) return next(new Error("Email already exists"));
+  const isEmailExists = await User.findOne({ email });
+  if (isEmailExists) return next(new ErrorClass("Email already exists", 400));
 
-    let image = null;
-    if (req.file) {
-      const uploadResult = await cloudinaryConfig().uploader.upload(req.file.path, {
-        folder: "Restaurant/userProfilePictures",
-      });
-      image = { public_id: uploadResult.public_id, secure_url: uploadResult.secure_url };
-    }
-
-    const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
-    const hashedPassword = hashSync(password, saltRounds);
-
-    const userInstance = new User({
-      email,
-      password: hashedPassword,
-      name,
-      phone,
-      image,
+  let image = null;
+  if (req.file) {
+    const uploadResult = await cloudinaryConfig().uploader.upload(req.file.path, {
+      folder: "Restaurant/userProfilePictures",
     });
-
-    const token = jwt.sign({ _id: userInstance._id, email: userInstance.email }, process.env.CONFIRMATION_SECRET);
-
-    await transporter.sendMail({
-      to: email,
-      subject: "Verify your Email ✔",
-      html: `<a href='${process.env.DOMAIN}users/verify/${token}'>Click here to confirm your email</a>`,
-    });
-
-    const newUser = await userInstance.save();
-
-    res.status(201).json({ message: "User created", user: newUser });
-  } catch (error) {
-    next(error);
+    image = { public_id: uploadResult.public_id, secure_url: uploadResult.secure_url };
   }
-};
 
+  const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
+  const hashedPassword = hashSync(password, saltRounds);
+
+  const userInstance = new User({
+    email,
+    password: hashedPassword,
+    name,
+    phone,
+    role: role || undefined,
+    image,
+  });
+
+  const token = jwt.sign({ _id: userInstance._id, email: userInstance.email }, process.env.CONFIRMATION_SECRET);
+
+  await transporter.sendMail({
+    to: email,
+    subject: "Verify your Email ✔",
+    html: `<a href='${process.env.LOCAL}users/verify/${token}'>Click here to confirm your email</a>`,
+  });
+
+  const newUser = await userInstance.save();
+
+  res.status(201).json({
+    status: "success",
+    message: "User created successfully",
+    user: newUser,
+  });
+};
 /**
- * @api {GET} /users/verify/:token  Verify user email
+ * @api {GET} /users/verify/:token Verify user email
  */
 export const verifyEmail = async (req, res, next) => {
   const token = req.params.token;
@@ -65,65 +62,65 @@ export const verifyEmail = async (req, res, next) => {
   const updatedUser = await User.findOneAndUpdate({ email: decoded.email }, { isConfirmed: true }, { new: true });
 
   if (!updatedUser) {
-    return next(new Error("User not found or already verified"));
+    return next(new ErrorClass("User not found or already verified", 404));
   }
 
-  res.json({ message: "Email confirmed successfully", user: updatedUser });
+  res.status(200).json({
+    status: "success",
+    message: "Email confirmed successfully",
+    user: updatedUser,
+  });
 };
+
 /**
- * @api {GET} /users/verify-status  Check user verification status
+ * @api {GET} /users/verify-status Check user verification status
  */
-export const checkVerificationStatus = (req, res, next) => {
+export const checkVerificationStatus = async (req, res, next) => {
   const { email } = req.query;
 
   if (!email) {
-    return next(new ErrorClass("Email is required", 400, "Email is required"));
+    return next(new ErrorClass("Email is required", 400));
   }
 
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        return next(new ErrorClass("User not found", 404, "No user found with the provided email"));
-      }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new ErrorClass("User not found", 404));
+    }
 
-      res.status(200).json({
-        status: "success",
-        isConfirmed: user.isConfirmed,
-        message: user.isConfirmed ? "Email is verified" : "Email is not verified",
-      });
-    })
-    .catch((err) => next(err));
+    res.status(200).json({
+      status: "success",
+      isConfirmed: user.isConfirmed,
+      message: user.isConfirmed ? "Email is verified" : "Email is not verified",
+    });
+  } catch (error) {
+    return next(error);
+  }
 };
 
-/**
- * @api {POST} /users/signin  Sign in the user
- */
 export const signIn = async (req, res, next) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) {
-    return next(new ErrorClass("Invalid credentials", 401, "Invalid credentials"));
-  }
+  if (!user) return next(new ErrorClass("Invalid credentials", 401));
 
   if (!user.isConfirmed) {
-    return next(new ErrorClass("Please confirm your email before signing in", 401, "Email not confirmed"));
+    return next(new ErrorClass("Please confirm your email before signing in", 401));
   }
 
   const isMatch = bcrypt.compareSync(password, user.password);
-  if (!isMatch) {
-    return next(new ErrorClass("Invalid credentials", 401, "Invalid credentials"));
-  }
+  if (!isMatch) return next(new ErrorClass("Invalid credentials", 401));
 
   const token = jwt.sign(
     {
       id: user._id,
+      role: user.role,
     },
     process.env.JWT_SECRET
-    // { expiresIn: "1h" }
   );
 
-  res.json({
+  res.status(200).json({
+    status: "success",
     message: "Signed in successfully",
     token,
     user: {
@@ -132,22 +129,20 @@ export const signIn = async (req, res, next) => {
       email: user.email,
       phone: user.phone,
       image: user.image,
+      role: user.role,
       isConfirmed: user.isConfirmed,
     },
   });
 };
 
-/**
- * @api {PUT} /users/update  update user data-->(name,phone,image)
- */
 export const updateUserProfile = async (req, res, next) => {
-  const { name, phone, email } = req.body;
+  const { name, phone, email, role } = req.body;
 
   const userId = req.authUser._id;
   const user = await User.findById(userId);
 
   if (!user) {
-    return next(new ErrorClass("User not found", 404, "User not found"));
+    return next(new ErrorClass("User not found", 404));
   }
 
   if (req.file) {
@@ -172,19 +167,21 @@ export const updateUserProfile = async (req, res, next) => {
   if (email) {
     user.email = email.trim();
   }
+  if (role && req.authUser.role === "admin") {
+    user.role = role;
+  }
 
   await user.save();
 
-  // Generate a new token after updating the profile
   const newToken = jwt.sign(
     {
       id: user._id,
+      role: user.role,
     },
     process.env.JWT_SECRET
-    // { expiresIn: "1h" }
   );
 
-  res.json({
+  res.status(200).json({
     status: "success",
     message: "Profile updated successfully",
     token: newToken,
@@ -192,7 +189,7 @@ export const updateUserProfile = async (req, res, next) => {
   });
 };
 /**
- * @api {PATCH} /users/change-password  change password
+ * @api {PATCH} /users/change-password Change Password
  */
 export const changePassword = async (req, res, next) => {
   const { password, newPassword } = req.body;
@@ -213,77 +210,17 @@ export const changePassword = async (req, res, next) => {
     return next(new ErrorClass("New password cannot be the same as the old password", 400));
   }
 
-  user.password = hashSync(newPassword, 5);
+  user.password = hashSync(newPassword, Number(process.env.SALT_ROUNDS) || 10);
   await user.save();
 
-  res.json({
+  res.status(200).json({
     status: "success",
     message: "Password changed successfully",
     userId: user._id,
   });
 };
-// TODO: Solve it with the FE
 /**
- * @api {POST} /users/forgot-password  Forgot Password
- */
-// export const forgotPassword = async (req, res, next) => {
-//   const { email } = req.body;
-
-//   try {
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return next(new ErrorClass("User not found", 404, "No user found with this email"));
-//     }
-
-//     // Generate a reset token
-//     const resetToken = jwt.sign(
-//       { userId: user._id },
-//       process.env.RESET_SECRET,
-//       { expiresIn: "15m" } // Token valid for 15 minutes
-//     );
-
-//     await transporter.sendMail({
-//       to: email,
-//       subject: "Password Reset Request",
-//       html: `<p>You requested a password reset. Click the link below to reset your password:</p>
-//              <a href='http://localhost:3000/users/reset-password/${resetToken}'>Reset Password</a>
-//              <p>If you did not request this, please ignore this email.</p>`,
-//     });
-
-//     res.json({
-//       status: "success",
-//       message: "Password reset link has been sent to your email",
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-// TODO: Solve it with the FE
-// /**
-//  * @api {POST} /users/reset-password  Reset Password
-//  */
-// export const resetPassword = async (req, res, next) => {
-//   const { resetToken, newPassword } = req.body;
-
-//   // Verify the reset token
-//   const decoded = jwt.verify(resetToken, process.env.RESET_SECRET);
-
-//   const user = await User.findById(decoded.userId);
-//   if (!user) {
-//     return next(new ErrorClass("Invalid token or user not found", 404, "Invalid token or user not found"));
-//   }
-
-//   user.password = hashSync(newPassword, +process.env.SALT_ROUNDS);
-//   await user.save();
-
-//   res.json({
-//     status: "success",
-//     message: "Password has been reset successfully",
-//   });
-// };
-
-/**
- * @api {DELETE} /users/delete-account  Delete Account
+ * @api {DELETE} /users/delete-account Delete Account
  */
 export const deleteAccount = async (req, res, next) => {
   const userId = req.authUser._id;
@@ -299,13 +236,13 @@ export const deleteAccount = async (req, res, next) => {
 
   await User.findByIdAndDelete(userId);
 
-  res.json({
+  res.status(200).json({
     status: "success",
     message: "Your account has been deleted successfully",
   });
 };
 /**
- * @api {GET} /users/profile  Get User Profile
+ * @api {GET} /users/profile Get User Profile
  */
 export const getUserProfile = async (req, res, next) => {
   const userId = req.authUser._id;
@@ -315,8 +252,59 @@ export const getUserProfile = async (req, res, next) => {
     return next(new ErrorClass("User not found", 404, "No user found with this ID"));
   }
 
-  res.json({
+  res.status(200).json({
     status: "success",
     user,
+  });
+};
+/**
+ * @api {POST} /users/forgot-password Forgot Password
+ */
+export const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ErrorClass("User not found", 404, "No user found with this email"));
+  }
+
+  const resetToken = jwt.sign(
+    { userId: user._id },
+    process.env.RESET_SECRET
+    // { expiresIn: "15m" }
+  );
+
+  await transporter.sendMail({
+    to: email,
+    subject: "Password Reset Request",
+    html: `<p>You requested a password reset. Click the link below to reset your password:</p>
+           <a href='${process.env.FRONT_END_DOMAIN}/users/reset-password?token=${resetToken}'>Reset Password</a>
+           <p>If you did not request this, please ignore this email.</p>`,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Password reset link has been sent to your email",
+  });
+};
+/**
+ * @api {POST} /users/reset-password Reset Password
+ */
+export const resetPassword = async (req, res, next) => {
+  const { resetToken, newPassword } = req.body;
+
+  const decoded = jwt.verify(resetToken, process.env.RESET_SECRET);
+
+  const user = await User.findById(decoded.userId);
+  if (!user) {
+    return next(new ErrorClass("Invalid token or user not found", 404, "Invalid token or user not found"));
+  }
+
+  user.password = hashSync(newPassword, Number(process.env.SALT_ROUNDS) || 10);
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Password has been reset successfully",
   });
 };

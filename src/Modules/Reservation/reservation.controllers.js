@@ -6,44 +6,37 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {POST} /reservations/create Create a new Reservation
- */
-export const createReservation = async (req, res, next) => {
+ */ export const createReservation = async (req, res) => {
   const { tableId, mealId, restaurantId, date, time } = req.body;
-
-  if (!tableId || !restaurantId || !date || !time) {
-    return next(new ErrorClass("Missing required fields", 400));
-  }
 
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
-    return next(new ErrorClass("Restaurant not found", 404));
+    return res.status(404).json({ message: "Restaurant not found" });
   }
 
-  // 3. Check if the table exists and belongs to the restaurant
   const table = await Table.findOne({ _id: tableId, restaurantId });
   if (!table) {
-    return next(new ErrorClass("Table not found or does not belong to this restaurant", 404));
+    return res.status(404).json({ message: "Table not found or does not belong to this restaurant" });
   }
 
-  // 4. Check if the table is already reserved at the given date and time
   const existingReservation = await Reservation.findOne({
     tableId,
     date,
     time,
     status: "reserved",
   });
+
   if (existingReservation) {
-    return next(new ErrorClass("Table is already reserved for this time slot", 400));
+    return res.status(400).json({ message: "Table is already reserved for this time slot" });
   }
 
   if (mealId) {
     const meal = await Meal.findOne({ _id: mealId, restaurantId });
     if (!meal) {
-      return next(new ErrorClass("Meal not found or does not belong to this restaurant", 404));
+      return res.status(404).json({ message: "Meal not found or does not belong to this restaurant" });
     }
   }
 
-  // 6. Create the reservation
   const reservation = new Reservation({
     userId: req.authUser._id,
     tableId,
@@ -57,26 +50,24 @@ export const createReservation = async (req, res, next) => {
   const newReservation = await reservation.save();
 
   res.status(201).json({
-    status: "success",
     message: "Reservation created successfully",
     reservation: newReservation,
   });
 };
+
 /**
  * @api {PUT} /reservations/update/:id Update a Reservation
- */
-export const updateReservation = async (req, res, next) => {
-  const { id } = req.params; // Reservation ID
+ */ export const updateReservation = async (req, res) => {
+  const { id } = req.params;
   const { date, time, status } = req.body;
 
-  //Find the reservation and check ownership
   const reservation = await Reservation.findById(id);
   if (!reservation) {
-    return next(new ErrorClass("Reservation not found", 404));
+    return res.status(404).json({ message: "Reservation not found" });
   }
 
   if (reservation.userId.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
+    return res.status(403).json({ message: "Unauthorized" });
   }
 
   if (date || time) {
@@ -85,11 +76,11 @@ export const updateReservation = async (req, res, next) => {
       date: date || reservation.date,
       time: time || reservation.time,
       status: "reserved",
-      _id: { $ne: reservation._id }, // Exclude the current reservation
+      _id: { $ne: reservation._id },
     });
 
     if (existingReservation) {
-      return next(new ErrorClass("Table is already reserved for the selected time", 400));
+      return res.status(400).json({ message: "Table is already reserved for the selected time" });
     }
   }
 
@@ -100,11 +91,11 @@ export const updateReservation = async (req, res, next) => {
   const updatedReservation = await reservation.save();
 
   res.status(200).json({
-    status: "success",
     message: "Reservation updated successfully",
     reservation: updatedReservation,
   });
 };
+
 /**
  * @api {DELETE} /reservations/delete/:id  Delete a Reservation
  */
@@ -139,7 +130,6 @@ export const getAllReservationsForRestaurant = async (req, res, next) => {
     return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
   }
 
-  // 2. Ensure the authenticated user owns the restaurant
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
     return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
@@ -210,8 +200,7 @@ export const getAllReservationsForUser = async (req, res, next) => {
 
 /**
  * @api {GET} /reservations/table/:tableId Fetch all reservations for a specific table
- */
-export const getReservationsForTable = async (req, res, next) => {
+ */ export const getReservationsForTable = async (req, res) => {
   const { tableId } = req.params;
 
   const reservations = await Reservation.find({ tableId })
@@ -219,7 +208,6 @@ export const getReservationsForTable = async (req, res, next) => {
     .populate("restaurantId", "name address")
     .sort({ date: 1, time: 1 });
 
-  // Check if the user is either the table owner or the user who reserved
   const filteredReservations = reservations.filter(
     (reservation) =>
       reservation.userId.toString() === req.authUser._id.toString() ||
@@ -227,11 +215,10 @@ export const getReservationsForTable = async (req, res, next) => {
   );
 
   if (!filteredReservations.length) {
-    return next(new ErrorClass("Unauthorized", 403, "You are not authorized to view these reservations"));
+    return res.status(403).json({ message: "Unauthorized" });
   }
 
   res.status(200).json({
-    status: "success",
     message: "Reservations for the table fetched successfully",
     reservations: filteredReservations,
   });

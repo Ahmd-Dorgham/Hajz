@@ -2,33 +2,26 @@ import { Router } from "express";
 import { multerHost, optionalUpload } from "../../Middlewares/multer.middleware.js";
 import { extensions } from "../../Utils/file-extensions.utils.js";
 import * as controller from "./user.controllers.js";
-import { auth } from "../../Middlewares/authentication.middleware.js";
 import { errorHandler } from "../../Middlewares/error-handling.middleware.js";
+import { auth } from "../../Middlewares/authentication.middleware.js";
 
 const userRouter = Router();
 
-userRouter.post("/signup", optionalUpload, controller.signUp);
-
-userRouter.get("/verify/:token", controller.verifyEmail);
-
-userRouter.get("/verify-status", controller.checkVerificationStatus);
-
-userRouter.post("/signin", controller.signIn);
-
+userRouter.post("/signup", optionalUpload, errorHandler(controller.signUp));
+userRouter.get("/verify/:token", errorHandler(controller.verifyEmail));
+userRouter.get("/verify-status", errorHandler(controller.checkVerificationStatus));
+userRouter.post("/signin", errorHandler(controller.signIn));
 userRouter.put(
   "/update",
-  auth(),
+  auth(["user", "restaurantOwner"]),
   multerHost({ allowedExtensions: extensions.Images }).single("image"),
-  controller.updateUserProfile
+  errorHandler(controller.updateUserProfile)
 );
+userRouter.patch("/change-password", auth(["user", "restaurantOwner"]), errorHandler(controller.changePassword));
+userRouter.delete("/delete-account", auth(["user", "restaurantOwner"]), errorHandler(controller.deleteAccount));
+userRouter.get("/profile", auth(["user", "restaurantOwner"]), errorHandler(controller.getUserProfile));
 
-userRouter.patch("/change-password", auth(), errorHandler(controller.changePassword));
-// TODO: Solve it with the FE
-// userRouter.post("/forgot-password", errorHandler(controller.forgotPassword));
-// userRouter.post("/reset-password", errorHandler(controller.resetPassword));
-
-userRouter.delete("/delete-account", auth(), errorHandler(controller.deleteAccount));
-
-userRouter.get("/profile", auth(), errorHandler(controller.getUserProfile));
+userRouter.post("/forgot-password", errorHandler(controller.forgotPassword));
+userRouter.post("/reset-password", errorHandler(controller.resetPassword));
 
 export { userRouter };

@@ -3,25 +3,27 @@ import { multerHost } from "../../Middlewares/multer.middleware.js";
 import { extensions } from "../../Utils/file-extensions.utils.js";
 import { auth } from "../../Middlewares/authentication.middleware.js";
 import * as controllers from "./vip-rooms.controllers.js";
+import { systemRoles } from "../../Utils/systemRoles.js";
+import { errorHandler } from "../../Middlewares/error-handling.middleware.js";
 
 const vipRoomRouter = Router();
 vipRoomRouter.post(
   "/create",
-  auth(),
+  auth([systemRoles.restaurantOwner]),
   multerHost({ allowedExtensions: extensions.Images }).fields([{ name: "images", maxCount: 5 }]),
-  controllers.createVipRoom
+  errorHandler(controllers.createVipRoom)
 );
 vipRoomRouter.patch(
   "/update/:id",
-  auth(),
+  auth([systemRoles.restaurantOwner]),
   multerHost({ allowedExtensions: extensions.Images }).fields([{ name: "images", maxCount: 5 }]),
-  controllers.updateVipRoom
+  errorHandler(controllers.updateVipRoom)
 );
 
-vipRoomRouter.delete("/delete/:id", auth(), controllers.deleteVipRoom);
+vipRoomRouter.delete("/delete/:id", auth([systemRoles.restaurantOwner]), errorHandler(controllers.deleteVipRoom));
 
-vipRoomRouter.get("/restaurant/:restaurantId", controllers.getVipRoomsByRestaurant);
+vipRoomRouter.get("/restaurant/:restaurantId", errorHandler(controllers.getVipRoomsByRestaurant));
 
-vipRoomRouter.get("/:id", controllers.getVipRoomById);
+vipRoomRouter.get("/:id", errorHandler(controllers.getVipRoomById));
 
 export { vipRoomRouter };

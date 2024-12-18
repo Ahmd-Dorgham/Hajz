@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { systemRoles } from "../../src/Utils/systemRoles.js";
 const { Schema, model } = mongoose;
 
 const userSchema = new Schema(
@@ -34,6 +35,11 @@ const userSchema = new Schema(
         secure_url: { type: String, default: null },
       },
       default: null,
+    },
+    role: {
+      type: String,
+      enum: Object.values(systemRoles),
+      default: systemRoles.user,
     },
   },
   { timestamps: true }

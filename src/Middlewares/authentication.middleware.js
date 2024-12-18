@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../../DB/Models/user.model.js";
 import { ErrorClass } from "../Utils/error-class.utils.js";
 
-export const auth = () => {
+export const auth = (allowedRoles) => {
   return async (req, res, next) => {
     const { token } = req.headers;
 
@@ -10,18 +10,18 @@ export const auth = () => {
       return next(new ErrorClass("Token is required", 404, "Authentication token missing"));
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token using `id`
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const user = await User.findById(decoded.id);
-      if (!user) {
-        return next(new ErrorClass("User not found", 404, "User not found"));
-      }
-
-      req.authUser = user; // Attach the authenticated user to `req`
-      next();
-    } catch (err) {
-      return next(new ErrorClass("Invalid or expired token", 401, "Invalid or expired token"));
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return next(new ErrorClass("User not found", 404, "User not found"));
     }
+
+    if (!allowedRoles.includes(user.role)) {
+      return next(new ErrorClass("Unauthorized", 403, "Access denied"));
+    }
+
+    req.authUser = user;
+    next();
   };
 };

@@ -1,51 +1,46 @@
 import Restaurant from "../../../DB/Models/restaurant.model.js";
-import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 import VipRoom from "../../../DB/Models/vip-room.model.js";
+import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
+import { ErrorClass } from "../../Utils/error-class.utils.js"; // Assuming ErrorClass is a custom utility
+
+const uploadImagesToCloudinary = async (files, folder) => {
+  const uploadedImages = [];
+  for (const file of files) {
+    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(file.path, {
+      folder,
+    });
+    uploadedImages.push({ secure_url, public_id });
+  }
+  return uploadedImages;
+};
+
 export const createVipRoom = async (req, res, next) => {
   const { restaurantId, name, capacity } = req.body;
 
   if (!restaurantId || !name || !capacity) {
     return next(new ErrorClass("Missing required fields", 400, "All fields are required"));
   }
+
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
     return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
   }
+
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
     return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
-  const images = [];
-  if (req.files?.images) {
-    for (const file of req.files.images) {
-      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(file.path, {
-        folder: "Restaurant/vipRoomImages",
-      });
-      images.push({ secure_url, public_id });
-    }
-  }
+  const images = req.files?.images ? await uploadImagesToCloudinary(req.files.images, "Restaurant/vipRoomImages") : [];
 
-  const vipRoomInstance = new VipRoom({
-    restaurantId,
-    name,
-    capacity,
-    images,
-  });
-
+  const vipRoomInstance = new VipRoom({ restaurantId, name, capacity, images });
   const newVipRoom = await vipRoomInstance.save();
 
-  // 6. Send success response
   res.status(201).json({
     status: "success",
     message: "VIP Room created successfully",
-    vipRoom: newVipRoom,
+    data: newVipRoom,
   });
 };
-
-/**
- * @api {PUT} /vip-rooms/update/:id  Update a VIP Room
- */
-
 export const updateVipRoom = async (req, res, next) => {
   const { id } = req.params; // VIP Room ID
   const { name, capacity } = req.body;
@@ -67,28 +62,17 @@ export const updateVipRoom = async (req, res, next) => {
       await cloudinaryConfig().uploader.destroy(image.public_id);
     }
 
-    const images = [];
-    for (const file of req.files.images) {
-      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(file.path, {
-        folder: "Restaurant/vipRoomImages",
-      });
-      images.push({ secure_url, public_id });
-    }
-    vipRoom.images = images; // Update images array
+    vipRoom.images = await uploadImagesToCloudinary(req.files.images, "Restaurant/vipRoomImages");
   }
 
-  await vipRoom.save();
+  const updatedVipRoom = await vipRoom.save();
 
   res.status(200).json({
     status: "success",
     message: "VIP Room updated successfully",
-    vipRoom,
+    data: updatedVipRoom,
   });
 };
-
-/**
- * @api {DELETE} /vip-rooms/delete/:id  Delete a VIP Room
- */
 export const deleteVipRoom = async (req, res, next) => {
   const { id } = req.params;
 
@@ -114,25 +98,21 @@ export const deleteVipRoom = async (req, res, next) => {
     message: "VIP Room deleted successfully",
   });
 };
-/**
- * @api {GET} /vip-rooms/restaurant/:restaurantId  Get all VIP Rooms for a Restaurant
- */
 export const getVipRoomsByRestaurant = async (req, res, next) => {
   const { restaurantId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
 
-  const vipRooms = await VipRoom.find({ restaurantId });
+  const vipRooms = await VipRoom.find({ restaurantId })
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
 
   res.status(200).json({
     status: "success",
     message: "VIP Rooms retrieved successfully",
     count: vipRooms.length,
-    vipRooms,
+    data: vipRooms,
   });
 };
-
-/**
- * @api {GET} /vip-rooms/:id  Get a Specific VIP Room
- */
 export const getVipRoomById = async (req, res, next) => {
   const { id } = req.params;
 
@@ -145,6 +125,6 @@ export const getVipRoomById = async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: "VIP Room retrieved successfully",
-    vipRoom,
+    data: vipRoom,
   });
 };
