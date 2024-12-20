@@ -29,7 +29,7 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
     name,
     image,
     desc,
-    price: Number(price), // Ensure price is stored as a number
+    price: Number(price),
     restaurantId,
   });
 

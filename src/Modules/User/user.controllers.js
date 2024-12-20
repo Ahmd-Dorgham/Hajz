@@ -192,7 +192,7 @@ export const updateUserProfile = async (req, res, next) => {
  * @api {PATCH} /users/change-password Change Password
  */
 export const changePassword = async (req, res, next) => {
-  const { password, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   const userId = req.authUser._id;
 
@@ -201,12 +201,12 @@ export const changePassword = async (req, res, next) => {
     return next(new ErrorClass("User not found", 404, "User not found"));
   }
 
-  const isMatch = bcrypt.compareSync(password, user.password);
+  const isMatch = bcrypt.compareSync(currentPassword, user.password);
   if (!isMatch) {
     return next(new ErrorClass("Invalid old password", 401, "Old password is incorrect"));
   }
 
-  if (password === newPassword) {
+  if (currentPassword === newPassword) {
     return next(new ErrorClass("New password cannot be the same as the old password", 400));
   }
 
