@@ -136,7 +136,7 @@ export const signIn = async (req, res, next) => {
 };
 
 export const updateUserProfile = async (req, res, next) => {
-  const { name, phone, email, role } = req.body;
+  const { name, phone, email } = req.body;
 
   const userId = req.authUser._id;
   const user = await User.findById(userId);
@@ -146,16 +146,19 @@ export const updateUserProfile = async (req, res, next) => {
   }
 
   if (req.file) {
-    if (user.image?.public_id) {
-      await cloudinaryConfig().uploader.destroy(user.image.public_id);
+    try {
+      if (user.image?.public_id) {
+        await cloudinaryConfig().uploader.destroy(user.image.public_id);
+      }
+
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
+        folder: "Restaurant/userProfilePictures",
+      });
+
+      user.image = { secure_url, public_id };
+    } catch (error) {
+      return next(new ErrorClass("Image upload failed", 500, error.message));
     }
-
-    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-      folder: "Restaurant/userProfilePictures",
-    });
-
-    user.image.secure_url = secure_url;
-    user.image.public_id = public_id;
   }
 
   if (name) {
@@ -166,9 +169,6 @@ export const updateUserProfile = async (req, res, next) => {
   }
   if (email) {
     user.email = email.trim();
-  }
-  if (role && req.authUser.role === "admin") {
-    user.role = role;
   }
 
   await user.save();

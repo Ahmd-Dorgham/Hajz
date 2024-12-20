@@ -17,6 +17,7 @@ userRouter.put(
   multerHost({ allowedExtensions: extensions.Images }).single("image"),
   errorHandler(controller.updateUserProfile)
 );
+
 userRouter.patch("/change-password", auth(["user", "restaurantOwner"]), errorHandler(controller.changePassword));
 userRouter.delete("/delete-account", auth(["user", "restaurantOwner"]), errorHandler(controller.deleteAccount));
 userRouter.get("/profile", auth(["user", "restaurantOwner"]), errorHandler(controller.getUserProfile));
