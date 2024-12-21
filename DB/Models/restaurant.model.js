@@ -40,7 +40,7 @@ const restaurantSchema = new Schema(
       ref: "User",
       required: true,
     },
-    rating: {
+    avgRating: {
       type: Number,
       min: 0,
       max: 5,

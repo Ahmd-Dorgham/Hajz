@@ -209,6 +209,52 @@ export const getRestaurantById = async (req, res, next) => {
 };
 
 /**
+ * @api {GET} /restaurants/search Search for restaurants by category
+ */
+export const searchRestaurantsByCategory = async (req, res, next) => {
+  const { categories, page = 1, limit = 10 } = req.query;
+
+  if (!categories) {
+    return next(new ErrorClass("Categories query parameter is required", 400));
+  }
+
+  const categoryArray = categories.split(",").map((cat) => cat.trim().toLowerCase());
+
+  const allowedCategories = ["desserts", "drinks", "meals"];
+  const invalidCategories = categoryArray.filter((category) => !allowedCategories.includes(category));
+  if (invalidCategories.length > 0) {
+    return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
+  }
+
+  const query = { categories: { $in: categoryArray } };
+
+  const skip = (page - 1) * limit;
+
+  const restaurants = await Restaurant.find(query)
+    .populate("ownedBy", "name email phone")
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const totalRestaurants = await Restaurant.countDocuments(query);
+
+  res.status(200).json({
+    status: "success",
+    message: "Restaurants fetched successfully",
+    data: {
+      restaurants,
+      pagination: {
+        total: totalRestaurants,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalRestaurants / limit),
+      },
+    },
+  });
+
+  next(new ErrorClass("Failed to search restaurants", 500, error.message));
+};
+
+/**
  * @api {GET} /restaurants  Get all restaurants
  */
 

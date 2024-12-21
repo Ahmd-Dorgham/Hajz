@@ -29,6 +29,9 @@ restaurantRouter.put(
   errorHandler(controllers.updateRestaurant)
 );
 
+restaurantRouter.get("/search", errorHandler(controllers.searchRestaurantsByCategory));
+// GET /restaurants/search?categories=desserts,drinks&page=1&limit=5
+
 restaurantRouter.delete("/delete/:id", auth([systemRoles.restaurantOwner]), errorHandler(controllers.deleteRestaurant));
 
 restaurantRouter.get("/:id", errorHandler(controllers.getRestaurantById));
