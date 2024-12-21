@@ -4,13 +4,23 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {POST} /restaurants/create  Create a new restaurant
- */
-export const createRestaurant = async (req, res, next) => {
-  const { name, address, phone, openingHours } = req.body;
+ */ export const createRestaurant = async (req, res, next) => {
+  const { name, address, phone, openingHours, categories } = req.body;
+
+  if (!categories || !Array.isArray(categories) || categories.length === 0) {
+    return next(new ErrorClass("Categories are required and should be an array", 400));
+  }
+
+  const allowedCategories = ["desserts", "drinks", "meals"];
+  const invalidCategories = categories.filter((category) => !allowedCategories.includes(category));
+  if (invalidCategories.length > 0) {
+    return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
+  }
 
   if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
     return next(new ErrorClass("Profile and layout images are required", 400));
   }
+
   const existingRestaurant = await Restaurant.findOne({ name, ownedBy: req.authUser._id });
   if (existingRestaurant) {
     return next(new ErrorClass("Restaurant with this name already exists", 400));
@@ -31,10 +41,6 @@ export const createRestaurant = async (req, res, next) => {
     }
   );
 
-  if (!req.files.galleryImages) {
-    return next(new ErrorClass("galleryImages are required", 400));
-  }
-
   const galleryImages = [];
   if (req.files.galleryImages) {
     for (const file of req.files.galleryImages) {
@@ -51,6 +57,7 @@ export const createRestaurant = async (req, res, next) => {
     address,
     phone,
     openingHours,
+    categories,
     profileImage: { secure_url: profileSecureUrl, public_id: profilePublicId },
     layoutImage: { secure_url: layoutSecureUrl, public_id: layoutPublicId },
     galleryImages,
@@ -68,10 +75,9 @@ export const createRestaurant = async (req, res, next) => {
 /**
  * @api {PUT} /restaurants/update/:id  Update a restaurant
  */
-
 export const updateRestaurant = async (req, res, next) => {
   const { id } = req.params;
-  const { name, address, phone, openingHours } = req.body;
+  const { name, address, phone, openingHours, categories } = req.body;
 
   const restaurant = await Restaurant.findById(id);
   if (!restaurant) {
@@ -80,6 +86,20 @@ export const updateRestaurant = async (req, res, next) => {
 
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
     return next(new ErrorClass("Unauthorized to update this restaurant", 403));
+  }
+
+  if (categories) {
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return next(new ErrorClass("Categories should be an array", 400));
+    }
+
+    const allowedCategories = ["desserts", "drinks", "meals"];
+    const invalidCategories = categories.filter((category) => !allowedCategories.includes(category));
+    if (invalidCategories.length > 0) {
+      return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
+    }
+
+    restaurant.categories = categories;
   }
 
   if (req.files) {

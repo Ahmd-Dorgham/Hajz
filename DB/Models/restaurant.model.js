@@ -40,12 +40,17 @@ const restaurantSchema = new Schema(
       ref: "User",
       required: true,
     },
-    // rating: {
-    //   type: Number,
-    //   min: 0,
-    //   max: 5,
-    //   default: 0,
-    // },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0,
+    },
+    categories: {
+      type: [String],
+      enum: ["desserts", "drinks", "meals"], // Allowed categories
+      required: true,
+    },
   },
   { timestamps: true }
 );
