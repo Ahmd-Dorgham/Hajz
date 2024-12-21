@@ -41,6 +41,12 @@ const userSchema = new Schema(
       enum: Object.values(systemRoles),
       default: systemRoles.user,
     },
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Restaurant", // Reference to the Restaurant model
+      },
+    ],
   },
   { timestamps: true }
 );

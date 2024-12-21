@@ -308,3 +308,77 @@ export const resetPassword = async (req, res, next) => {
     message: "Password has been reset successfully",
   });
 };
+/**
+ * @api {POST} /users/favorites/add add favorite restaurant
+ */
+export const addFavorite = async (req, res, next) => {
+  const { restaurantId } = req.body;
+  const userId = req.authUser._id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorClass("User not found", 404));
+  }
+
+  if (user.favorites.includes(restaurantId)) {
+    return res.status(400).json({
+      status: "error",
+      message: "Restaurant already in favorites",
+    });
+  }
+
+  user.favorites.push(restaurantId);
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Restaurant added to favorites",
+    data: user.favorites,
+  });
+};
+/**
+ * @api {POST} /users/favorites/remove to remove from favorites
+ */
+export const removeFavorite = async (req, res, next) => {
+  const { restaurantId } = req.body;
+  const userId = req.authUser._id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new ErrorClass("User not found", 404));
+  }
+
+  if (!user.favorites.includes(restaurantId)) {
+    return res.status(400).json({
+      status: "error",
+      message: "Restaurant not in favorites",
+    });
+  }
+
+  user.favorites = user.favorites.filter((id) => id.toString() !== restaurantId);
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Restaurant removed from favorites",
+    data: user.favorites,
+  });
+};
+/**
+ * @api {GET} /users/favorites/ to get all favorites for a user
+ */
+export const getFavorites = async (req, res, next) => {
+  const userId = req.authUser._id;
+
+  const user = await User.findById(userId).populate("favorites");
+  console.log(user);
+  if (!user) {
+    return next(new ErrorClass("User not found", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Favorites retrieved successfully",
+    data: user.favorites,
+  });
+};

@@ -25,4 +25,10 @@ userRouter.get("/profile", auth(["user", "restaurantOwner"]), errorHandler(contr
 userRouter.post("/forgot-password", errorHandler(controller.forgotPassword));
 userRouter.post("/reset-password", errorHandler(controller.resetPassword));
 
+userRouter.post("/favorites/add", auth(["user"]), errorHandler(controller.addFavorite));
+
+userRouter.post("/favorites/remove", auth(["user"]), errorHandler(controller.removeFavorite));
+
+userRouter.get("/favorites", auth(["user"]), errorHandler(controller.getFavorites));
+
 export { userRouter };
