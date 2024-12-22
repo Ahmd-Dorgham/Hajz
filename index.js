@@ -13,7 +13,7 @@ const port = process.env.PORT || 3000;
 
 // Configure CORS
 const corsOptions = {
-  origin: ["http://localhost:4000", "https://your-frontend-domain.com"], // Allowed origins
+  origin: ["http://localhost:4000", "https://resturant-frontend-nu.vercel.app/"], // Allowed origins
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed methods
   credentials: true, // Allow cookies and credentials
 };
