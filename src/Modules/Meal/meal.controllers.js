@@ -6,7 +6,7 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 /**
  * @api {POST} /meals/create  Create a new Meal
  */ export const createMeal = async (req, res) => {
-  const { name, desc, price, restaurantId } = req.body;
+  const { name, desc, price, restaurantId, category } = req.body;
 
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
@@ -27,6 +27,7 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
   const mealInstance = new Meal({
     name,
+    category,
     image,
     desc,
     price: Number(price),
@@ -46,7 +47,7 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
  * @api {PUT} /meals/update/:id  Update a Meal
  */ export const updateMeal = async (req, res) => {
   const { id } = req.params;
-  const { name, desc, price } = req.body;
+  const { name, desc, price, category } = req.body;
 
   const meal = await Meal.findById(id).populate("restaurantId");
   if (!meal) {
@@ -58,6 +59,7 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
   }
 
   if (name) meal.name = name.trim();
+  if (category) meal.category = category.trim();
   if (desc) meal.desc = desc.trim();
   if (price && !isNaN(Number(price))) meal.price = Number(price);
 
