@@ -13,11 +13,12 @@ const reservationSchema = new Schema(
       ref: "Table",
       required: true,
     },
-    mealId: {
-      type: Schema.Types.ObjectId,
-      ref: "Meal",
-      required: false, // Optional mealId
-    },
+    mealId: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Meal",
+      },
+    ],
     restaurantId: {
       type: Schema.Types.ObjectId,
       ref: "Restaurant",

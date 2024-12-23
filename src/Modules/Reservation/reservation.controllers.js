@@ -30,10 +30,10 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return res.status(400).json({ message: "Table is already reserved for this time slot" });
   }
 
-  if (mealId) {
-    const meal = await Meal.findOne({ _id: mealId, restaurantId });
-    if (!meal) {
-      return res.status(404).json({ message: "Meal not found or does not belong to this restaurant" });
+  if (mealId && Array.isArray(mealId)) {
+    const meals = await Meal.find({ _id: { $in: mealId }, restaurantId });
+    if (meals.length !== mealId.length) {
+      return res.status(404).json({ message: "One or more meals not found or do not belong to this restaurant" });
     }
   }
 
@@ -57,9 +57,10 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {PUT} /reservations/update/:id Update a Reservation
- */ export const updateReservation = async (req, res) => {
+ */
+export const updateReservation = async (req, res) => {
   const { id } = req.params;
-  const { date, time, status } = req.body;
+  const { date, time, status, mealId } = req.body;
 
   const reservation = await Reservation.findById(id);
   if (!reservation) {
@@ -84,6 +85,14 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     }
   }
 
+  if (mealId && Array.isArray(mealId)) {
+    const meals = await Meal.find({ _id: { $in: mealId }, restaurantId: reservation.restaurantId });
+    if (meals.length !== mealId.length) {
+      return res.status(404).json({ message: "One or more meals not found or do not belong to this restaurant" });
+    }
+    reservation.mealId = mealId;
+  }
+
   reservation.date = date || reservation.date;
   reservation.time = time || reservation.time;
   reservation.status = status || reservation.status;
@@ -98,25 +107,28 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {DELETE} /reservations/delete/:id  Delete a Reservation
- */
-export const deleteReservation = async (req, res, next) => {
+ */ export const deleteReservation = async (req, res, next) => {
   const { id } = req.params; // Extract reservation ID from the URL parameters
 
-  const reservation = await Reservation.findById(id);
-  if (!reservation) {
-    return next(new ErrorClass("Reservation not found", 404, "Invalid reservation ID"));
+  try {
+    const reservation = await Reservation.findById(id);
+    if (!reservation) {
+      return next(new ErrorClass("Reservation not found", 404, "Invalid reservation ID"));
+    }
+
+    if (reservation.userId.toString() !== req.authUser._id.toString()) {
+      return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
+    }
+
+    await Reservation.findByIdAndDelete(id);
+
+    res.status(200).json({
+      status: "success",
+      message: "Reservation deleted successfully",
+    });
+  } catch (error) {
+    return next(new ErrorClass("An error occurred", 500, error.message));
   }
-
-  if (reservation.userId.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
-  }
-
-  await Reservation.findByIdAndDelete(id);
-
-  res.status(200).json({
-    status: "success",
-    message: "Reservation deleted successfully",
-  });
 };
 
 /**
