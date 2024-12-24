@@ -213,11 +213,16 @@ export const updateReservationStatus = async (req, res, next) => {
 /**
  * @api {GET} /reservations/user Get All Reservations for a User
  */
+
+//TODO: To be Reviewed
 export const getAllReservationsForUser = async (req, res, next) => {
   const reservations = await Reservation.find({ userId: req.authUser._id })
     .populate("restaurantId", "name address profileImage")
     .populate("tableId", "tableNumber capacity")
-    .populate("mealId", "name price");
+    .populate({
+      path: "mealId.meal",
+      select: "name price",
+    });
 
   res.status(200).json({
     status: "success",
