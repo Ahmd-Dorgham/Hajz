@@ -15,8 +15,16 @@ const reservationSchema = new Schema(
     },
     mealId: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Meal",
+        meal: {
+          type: Schema.Types.ObjectId,
+          ref: "Meal",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
       },
     ],
     restaurantId: {
