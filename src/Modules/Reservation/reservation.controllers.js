@@ -25,15 +25,23 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     time,
     status: "reserved",
   });
-
   if (existingReservation) {
     return res.status(400).json({ message: "Table is already reserved for this time slot" });
   }
 
   if (mealId && Array.isArray(mealId)) {
-    const meals = await Meal.find({ _id: { $in: mealId }, restaurantId });
-    if (meals.length !== mealId.length) {
-      return res.status(404).json({ message: "One or more meals not found or do not belong to this restaurant" });
+    const mealValidationPromises = mealId.map(async (item) => {
+      const meal = await Meal.findOne({ _id: item.meal, restaurantId });
+      if (!meal) {
+        throw new Error(`Meal with ID ${item.meal} not found or does not belong to this restaurant`);
+      }
+      return true;
+    });
+
+    try {
+      await Promise.all(mealValidationPromises);
+    } catch (error) {
+      return res.status(404).json({ message: error.message });
     }
   }
 
@@ -57,8 +65,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {PUT} /reservations/update/:id Update a Reservation
- */
-export const updateReservation = async (req, res) => {
+ */ export const updateReservation = async (req, res) => {
   const { id } = req.params;
   const { date, time, status, mealId } = req.body;
 
@@ -86,11 +93,20 @@ export const updateReservation = async (req, res) => {
   }
 
   if (mealId && Array.isArray(mealId)) {
-    const meals = await Meal.find({ _id: { $in: mealId }, restaurantId: reservation.restaurantId });
-    if (meals.length !== mealId.length) {
-      return res.status(404).json({ message: "One or more meals not found or do not belong to this restaurant" });
+    const mealValidationPromises = mealId.map(async (item) => {
+      const meal = await Meal.findOne({ _id: item.meal, restaurantId: reservation.restaurantId });
+      if (!meal) {
+        throw new Error(`Meal with ID ${item.meal} not found or does not belong to this restaurant`);
+      }
+      return true;
+    });
+
+    try {
+      await Promise.all(mealValidationPromises);
+      reservation.mealId = mealId;
+    } catch (error) {
+      return res.status(404).json({ message: error.message });
     }
-    reservation.mealId = mealId;
   }
 
   reservation.date = date || reservation.date;
@@ -110,25 +126,25 @@ export const updateReservation = async (req, res) => {
  */ export const deleteReservation = async (req, res, next) => {
   const { id } = req.params; // Extract reservation ID from the URL parameters
 
-  try {
-    const reservation = await Reservation.findById(id);
-    if (!reservation) {
-      return next(new ErrorClass("Reservation not found", 404, "Invalid reservation ID"));
-    }
+  const reservation = await Reservation.findOneAndDelete({
+    _id: id,
+    userId: req.authUser._id,
+  });
 
-    if (reservation.userId.toString() !== req.authUser._id.toString()) {
-      return next(new ErrorClass("Unauthorized", 403, "You do not own this reservation"));
-    }
-
-    await Reservation.findByIdAndDelete(id);
-
-    res.status(200).json({
-      status: "success",
-      message: "Reservation deleted successfully",
-    });
-  } catch (error) {
-    return next(new ErrorClass("An error occurred", 500, error.message));
+  if (!reservation) {
+    return next(
+      new ErrorClass(
+        "Reservation not found or unauthorized",
+        404,
+        "Invalid reservation ID or you do not own this reservation"
+      )
+    );
   }
+
+  res.status(200).json({
+    status: "success",
+    message: "Reservation deleted successfully",
+  });
 };
 
 /**
@@ -199,7 +215,7 @@ export const updateReservationStatus = async (req, res, next) => {
  */
 export const getAllReservationsForUser = async (req, res, next) => {
   const reservations = await Reservation.find({ userId: req.authUser._id })
-    .populate("restaurantId", "name address")
+    .populate("restaurantId", "name address profileImage")
     .populate("tableId", "tableNumber capacity")
     .populate("mealId", "name price");
 
