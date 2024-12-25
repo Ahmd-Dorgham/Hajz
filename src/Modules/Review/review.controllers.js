@@ -128,3 +128,24 @@ export const deleteReview = async (req, res, next) => {
     message: "Review deleted successfully",
   });
 };
+//
+/**
+ * @api {GET} /reviews/restaurant/:restaurantId Get all reviews for a specific restaurant
+ */
+export const getAllReviewsForRestaurant = async (req, res, next) => {
+  const { restaurantId } = req.params;
+
+  const reviews = await Review.find({ restaurantId })
+    .populate("userId", "name email")
+    .populate("reservationId", "date time status");
+
+  if (!reviews || reviews.length === 0) {
+    return next(new ErrorClass("No reviews found for this restaurant", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Reviews fetched successfully",
+    data: reviews,
+  });
+};
