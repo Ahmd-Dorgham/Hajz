@@ -9,22 +9,13 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
   const { name, address, phone, openingHours, categories } = req.body;
 
   if (!categories || !Array.isArray(categories) || categories.length === 0) {
-    return next(
-      new ErrorClass("Categories are required and should be an array", 400),
-    );
+    return next(new ErrorClass("Categories are required and should be an array", 400));
   }
 
   const allowedCategories = ["desserts", "drinks", "meals"];
-  const invalidCategories = categories.filter(
-    (category) => !allowedCategories.includes(category),
-  );
+  const invalidCategories = categories.filter((category) => !allowedCategories.includes(category));
   if (invalidCategories.length > 0) {
-    return next(
-      new ErrorClass(
-        `Invalid categories: ${invalidCategories.join(", ")}`,
-        400,
-      ),
-    );
+    return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
   }
 
   if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
@@ -36,29 +27,30 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     ownedBy: req.authUser._id,
   });
   if (existingRestaurant) {
-    return next(
-      new ErrorClass("Restaurant with this name already exists", 400),
-    );
+    return next(new ErrorClass("Restaurant with this name already exists", 400));
   }
 
   // Upload images to Cloudinary
-  const { secure_url: profileSecureUrl, public_id: profilePublicId } =
-    await cloudinaryConfig().uploader.upload(req.files.profileImage[0].path, {
+  const { secure_url: profileSecureUrl, public_id: profilePublicId } = await cloudinaryConfig().uploader.upload(
+    req.files.profileImage[0].path,
+    {
       folder: "Restaurant/restaurantProfileImages",
-    });
+    }
+  );
 
-  const { secure_url: layoutSecureUrl, public_id: layoutPublicId } =
-    await cloudinaryConfig().uploader.upload(req.files.layoutImage[0].path, {
+  const { secure_url: layoutSecureUrl, public_id: layoutPublicId } = await cloudinaryConfig().uploader.upload(
+    req.files.layoutImage[0].path,
+    {
       folder: "Restaurant/restaurantLayoutImages",
-    });
+    }
+  );
 
   const galleryImages = [];
   if (req.files.galleryImages) {
     for (const file of req.files.galleryImages) {
-      const { secure_url, public_id } =
-        await cloudinaryConfig().uploader.upload(file.path, {
-          folder: "Restaurant/restaurantGalleryImages",
-        });
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(file.path, {
+        folder: "Restaurant/restaurantGalleryImages",
+      });
       galleryImages.push({ secure_url, public_id });
     }
   }
@@ -106,16 +98,9 @@ export const updateRestaurant = async (req, res, next) => {
     }
 
     const allowedCategories = ["desserts", "drinks", "meals"];
-    const invalidCategories = categories.filter(
-      (category) => !allowedCategories.includes(category),
-    );
+    const invalidCategories = categories.filter((category) => !allowedCategories.includes(category));
     if (invalidCategories.length > 0) {
-      return next(
-        new ErrorClass(
-          `Invalid categories: ${invalidCategories.join(", ")}`,
-          400,
-        ),
-      );
+      return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
     }
 
     restaurant.categories = categories;
@@ -124,33 +109,21 @@ export const updateRestaurant = async (req, res, next) => {
   if (req.files) {
     if (req.files.profileImage) {
       if (restaurant.profileImage?.public_id) {
-        await cloudinaryConfig().uploader.destroy(
-          restaurant.profileImage.public_id,
-        );
+        await cloudinaryConfig().uploader.destroy(restaurant.profileImage.public_id);
       }
-      const { secure_url, public_id } =
-        await cloudinaryConfig().uploader.upload(
-          req.files.profileImage[0].path,
-          {
-            folder: "Restaurant/restaurantProfileImages",
-          },
-        );
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.files.profileImage[0].path, {
+        folder: "Restaurant/restaurantProfileImages",
+      });
       restaurant.profileImage = { secure_url, public_id };
     }
 
     if (req.files.layoutImage) {
       if (restaurant.layoutImage?.public_id) {
-        await cloudinaryConfig().uploader.destroy(
-          restaurant.layoutImage.public_id,
-        );
+        await cloudinaryConfig().uploader.destroy(restaurant.layoutImage.public_id);
       }
-      const { secure_url, public_id } =
-        await cloudinaryConfig().uploader.upload(
-          req.files.layoutImage[0].path,
-          {
-            folder: "Restaurant/restaurantLayoutImages",
-          },
-        );
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.files.layoutImage[0].path, {
+        folder: "Restaurant/restaurantLayoutImages",
+      });
       restaurant.layoutImage = { secure_url, public_id };
     }
 
@@ -162,10 +135,9 @@ export const updateRestaurant = async (req, res, next) => {
       }
       restaurant.galleryImages = [];
       for (const file of req.files.galleryImages) {
-        const { secure_url, public_id } =
-          await cloudinaryConfig().uploader.upload(file.path, {
-            folder: "Restaurant/restaurantGalleryImages",
-          });
+        const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(file.path, {
+          folder: "Restaurant/restaurantGalleryImages",
+        });
         restaurant.galleryImages.push({ secure_url, public_id });
       }
     }
@@ -201,9 +173,7 @@ export const deleteRestaurant = async (req, res, next) => {
   }
 
   if (restaurant.profileImage?.public_id) {
-    await cloudinaryConfig().uploader.destroy(
-      restaurant.profileImage.public_id,
-    );
+    await cloudinaryConfig().uploader.destroy(restaurant.profileImage.public_id);
   }
   if (restaurant.layoutImage?.public_id) {
     await cloudinaryConfig().uploader.destroy(restaurant.layoutImage.public_id);
@@ -228,10 +198,7 @@ export const deleteRestaurant = async (req, res, next) => {
 export const getRestaurantById = async (req, res, next) => {
   const { id } = req.params;
 
-  const restaurant = await Restaurant.findById(id).populate(
-    "ownedBy",
-    "name email phone",
-  );
+  const restaurant = await Restaurant.findById(id).populate("ownedBy", "name email phone");
   if (!restaurant) {
     return next(new ErrorClass("Restaurant not found", 404));
   }
@@ -255,21 +222,12 @@ export const searchRestaurantsByCategory = async (req, res, next) => {
     return next(new ErrorClass("Categories query parameter is required", 400));
   }
 
-  const categoryArray = categories
-    .split(",")
-    .map((cat) => cat.trim().toLowerCase());
+  const categoryArray = categories.split(",").map((cat) => cat.trim().toLowerCase());
 
   const allowedCategories = ["desserts", "drinks", "meals"];
-  const invalidCategories = categoryArray.filter(
-    (category) => !allowedCategories.includes(category),
-  );
+  const invalidCategories = categoryArray.filter((category) => !allowedCategories.includes(category));
   if (invalidCategories.length > 0) {
-    return next(
-      new ErrorClass(
-        `Invalid categories: ${invalidCategories.join(", ")}`,
-        400,
-      ),
-    );
+    return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
   }
 
   const query = { categories: { $in: categoryArray } };
@@ -306,17 +264,7 @@ export const searchRestaurantsByCategory = async (req, res, next) => {
 
 export const getAllRestaurants = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      name,
-      address,
-      category,
-      avgRating,
-      minPrice,
-      maxPrice,
-      sortBy,
-    } = req.query;
+    const { page = 1, limit = 10, name, address, category, avgRating, minPrice, maxPrice, sortBy } = req.query;
 
     // Build query for filtering
     const query = {};
@@ -342,12 +290,9 @@ export const getAllRestaurants = async (req, res, next) => {
 
       // filter restaurants based on the meals price average
       restaurants = restaurants.filter((restaurant) => {
-        const restaurantMeals = meals.filter(
-          (meal) => meal.restaurantId.toString() === restaurant._id.toString(),
-        );
+        const restaurantMeals = meals.filter((meal) => meal.restaurantId.toString() === restaurant._id.toString());
         const avgPrices = restaurantMeals.map((meal) => meal.price);
-        const averagePrice =
-          avgPrices.reduce((a, b) => a + b, 0) / avgPrices.length;
+        const averagePrice = avgPrices.reduce((a, b) => a + b, 0) / avgPrices.length;
 
         return averagePrice >= minPrice && averagePrice <= maxPrice;
       });
@@ -372,4 +317,22 @@ export const getAllRestaurants = async (req, res, next) => {
   } catch (error) {
     next(new ErrorClass("Failed to fetch restaurants", 500, error.message));
   }
+};
+/**
+ * @api {GET} /restaurants/owner/:ownerId Get all restaurants for a specific restaurant owner
+ */
+export const getRestaurantsByOwnerId = async (req, res, next) => {
+  const { ownerId } = req.params;
+
+  const restaurants = await Restaurant.find({ ownedBy: ownerId });
+
+  if (!restaurants || restaurants.length === 0) {
+    return next(new ErrorClass("No restaurants found for this owner", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Restaurants fetched successfully",
+    data: restaurants,
+  });
 };

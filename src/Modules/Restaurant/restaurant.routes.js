@@ -38,4 +38,6 @@ restaurantRouter.get("/:id", errorHandler(controllers.getRestaurantById));
 
 restaurantRouter.get("/", errorHandler(controllers.getAllRestaurants));
 
+restaurantRouter.get("/owner/:ownerId", errorHandler(controllers.getRestaurantsByOwnerId));
+
 export { restaurantRouter };
