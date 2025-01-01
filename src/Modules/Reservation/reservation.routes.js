@@ -20,7 +20,7 @@ reservationRouter.patch(
   "/status/:id",
   auth([systemRoles.restaurantOwner]),
   errorHandler(controllers.updateReservationStatus)
-); //for the owner
+);
 
 reservationRouter.get("/user", auth([systemRoles.user]), errorHandler(controllers.getAllReservationsForUser));
 
@@ -34,6 +34,12 @@ reservationRouter.get(
   "/:id",
   auth([systemRoles.restaurantOwner, systemRoles.user]),
   errorHandler(controllers.getSpecificReservation)
+);
+
+reservationRouter.get(
+  "/restaurant/:restaurantId/day",
+  auth([systemRoles.restaurantOwner]),
+  errorHandler(controllers.getReservationsByDayForRestaurant)
 );
 
 export { reservationRouter };

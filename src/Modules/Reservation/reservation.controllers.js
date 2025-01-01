@@ -273,7 +273,6 @@ export const getSpecificReservation = async (req, res, next) => {
     return next(new ErrorClass("Reservation not found", 404));
   }
 
-  // Check if the user is either the restaurant owner or the reservation maker
   if (
     reservation.userId.toString() !== req.authUser._id.toString() &&
     reservation.restaurantId.ownedBy.toString() !== req.authUser._id.toString()
@@ -285,5 +284,37 @@ export const getSpecificReservation = async (req, res, next) => {
     status: "success",
     message: "Reservation details fetched successfully",
     reservation,
+  });
+};
+
+export const getReservationsByDayForRestaurant = async (req, res, next) => {
+  const { restaurantId } = req.params; // /reservations/restaurant/:restaurantId/day?date=12-7-2024
+  const { date } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ message: "Date parameter is required" });
+  }
+
+  const restaurant = await Restaurant.findById(restaurantId);
+  if (!restaurant) {
+    return next(new ErrorClass("Restaurant not found", 404));
+  }
+
+  if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
+    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+  }
+
+  const reservations = await Reservation.find({
+    restaurantId: restaurantId,
+    date: date,
+  })
+    .populate("userId", "name email")
+    .populate("tableId", "tableNumber capacity")
+    .sort({ time: 1 }); // sort by time ascending
+
+  return res.status(200).json({
+    status: "success",
+    message: "Reservations for the given day fetched successfully",
+    reservations,
   });
 };
