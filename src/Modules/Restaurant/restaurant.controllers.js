@@ -5,7 +5,9 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {POST} /restaurants/create  Create a new restaurant
- */ export const createRestaurant = async (req, res, next) => {
+ */
+
+export const createRestaurant = async (req, res, next) => {
   const { name, address, phone, openingHours, categories } = req.body;
 
   if (!categories || !Array.isArray(categories) || categories.length === 0) {
@@ -23,14 +25,13 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
   }
 
   const existingRestaurant = await Restaurant.findOne({
-    name,
     ownedBy: req.authUser._id,
   });
+
   if (existingRestaurant) {
-    return next(new ErrorClass("Restaurant with this name already exists", 400));
+    return next(new ErrorClass("You already own a restaurant. Each owner can only have one restaurant.", 400));
   }
 
-  // Upload images to Cloudinary
   const { secure_url: profileSecureUrl, public_id: profilePublicId } = await cloudinaryConfig().uploader.upload(
     req.files.profileImage[0].path,
     {
@@ -55,7 +56,6 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     }
   }
 
-  // Create the restaurant
   const restaurantInstance = new Restaurant({
     name,
     address,
@@ -67,6 +67,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     galleryImages,
     ownedBy: req.authUser._id,
   });
+
   const newRestaurant = await restaurantInstance.save();
 
   res.status(201).json({
