@@ -24,6 +24,7 @@ const userSchema = new Schema(
     phone: {
       type: String,
       trim: true,
+      unique: true,
     },
     isConfirmed: {
       type: Boolean,

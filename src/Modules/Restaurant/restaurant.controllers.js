@@ -1,12 +1,12 @@
 import Meal from "../../../DB/Models/meal.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
+import User from "../../../DB/Models/user.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
 
 /**
  * @api {POST} /restaurants/create  Create a new restaurant
  */
-
 export const createRestaurant = async (req, res, next) => {
   const { name, address, phone, openingHours, categories } = req.body;
 
@@ -69,6 +69,9 @@ export const createRestaurant = async (req, res, next) => {
   });
 
   const newRestaurant = await restaurantInstance.save();
+
+  // Update the user's restaurant key with the restaurant ID
+  await User.findByIdAndUpdate(req.authUser._id, { restaurant: newRestaurant._id }, { new: true });
 
   res.status(201).json({
     status: "success",

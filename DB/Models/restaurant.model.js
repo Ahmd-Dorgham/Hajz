@@ -16,6 +16,7 @@ const restaurantSchema = new Schema(
     phone: {
       type: String,
       trim: true,
+      required: true,
     },
     openingHours: {
       type: String,

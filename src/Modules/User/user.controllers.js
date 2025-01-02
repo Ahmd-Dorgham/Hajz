@@ -17,12 +17,9 @@ export const signUp = async (req, res, next) => {
 
   let image = null;
   if (req.file) {
-    const uploadResult = await cloudinaryConfig().uploader.upload(
-      req.file.path,
-      {
-        folder: "Restaurant/userProfilePictures",
-      },
-    );
+    const uploadResult = await cloudinaryConfig().uploader.upload(req.file.path, {
+      folder: "Restaurant/userProfilePictures",
+    });
     image = {
       public_id: uploadResult.public_id,
       secure_url: uploadResult.secure_url,
@@ -41,10 +38,7 @@ export const signUp = async (req, res, next) => {
     image,
   });
 
-  const token = jwt.sign(
-    { _id: userInstance._id, email: userInstance.email },
-    process.env.CONFIRMATION_SECRET,
-  );
+  const token = jwt.sign({ _id: userInstance._id, email: userInstance.email }, process.env.CONFIRMATION_SECRET);
 
   await transporter.sendMail({
     to: email,
@@ -68,11 +62,7 @@ export const verifyEmail = async (req, res, next) => {
 
   const decoded = jwt.verify(token, process.env.CONFIRMATION_SECRET);
 
-  const updatedUser = await User.findOneAndUpdate(
-    { email: decoded.email },
-    { isConfirmed: true },
-    { new: true },
-  );
+  const updatedUser = await User.findOneAndUpdate({ email: decoded.email }, { isConfirmed: true }, { new: true });
 
   if (!updatedUser) {
     return next(new ErrorClass("User not found or already verified", 404));
@@ -118,9 +108,7 @@ export const signIn = async (req, res, next) => {
   if (!user) return next(new ErrorClass("Invalid credentials", 401));
 
   if (!user.isConfirmed) {
-    return next(
-      new ErrorClass("Please confirm your email before signing in", 401),
-    );
+    return next(new ErrorClass("Please confirm your email before signing in", 401));
   }
 
   const isMatch = bcrypt.compareSync(password, user.password);
@@ -131,22 +119,14 @@ export const signIn = async (req, res, next) => {
       id: user._id,
       role: user.role,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET
   );
 
   res.status(200).json({
     status: "success",
     message: "Signed in successfully",
     token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      image: user.image,
-      role: user.role,
-      isConfirmed: user.isConfirmed,
-    },
+    user,
   });
 };
 
@@ -166,10 +146,9 @@ export const updateUserProfile = async (req, res, next) => {
         await cloudinaryConfig().uploader.destroy(user.image.public_id);
       }
 
-      const { secure_url, public_id } =
-        await cloudinaryConfig().uploader.upload(req.file.path, {
-          folder: "Restaurant/userProfilePictures",
-        });
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
+        folder: "Restaurant/userProfilePictures",
+      });
 
       user.image = { secure_url, public_id };
     } catch (error) {
@@ -194,7 +173,7 @@ export const updateUserProfile = async (req, res, next) => {
       id: user._id,
       role: user.role,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET
   );
 
   res.status(200).json({
@@ -219,18 +198,11 @@ export const changePassword = async (req, res, next) => {
 
   const isMatch = bcrypt.compareSync(currentPassword, user.password);
   if (!isMatch) {
-    return next(
-      new ErrorClass("Invalid old password", 401, "Old password is incorrect"),
-    );
+    return next(new ErrorClass("Invalid old password", 401, "Old password is incorrect"));
   }
 
   if (currentPassword === newPassword) {
-    return next(
-      new ErrorClass(
-        "New password cannot be the same as the old password",
-        400,
-      ),
-    );
+    return next(new ErrorClass("New password cannot be the same as the old password", 400));
   }
 
   user.password = hashSync(newPassword, Number(process.env.SALT_ROUNDS) || 10);
@@ -250,9 +222,7 @@ export const deleteAccount = async (req, res, next) => {
 
   const user = await User.findById(userId);
   if (!user) {
-    return next(
-      new ErrorClass("User not found", 404, "No user found with this ID"),
-    );
+    return next(new ErrorClass("User not found", 404, "No user found with this ID"));
   }
 
   if (user.image?.public_id) {
@@ -274,9 +244,7 @@ export const getUserProfile = async (req, res, next) => {
 
   const user = await User.findById(userId).select("-password");
   if (!user) {
-    return next(
-      new ErrorClass("User not found", 404, "No user found with this ID"),
-    );
+    return next(new ErrorClass("User not found", 404, "No user found with this ID"));
   }
 
   res.status(200).json({
@@ -292,14 +260,12 @@ export const forgotPassword = async (req, res, next) => {
 
   const user = await User.findOne({ email });
   if (!user) {
-    return next(
-      new ErrorClass("User not found", 404, "No user found with this email"),
-    );
+    return next(new ErrorClass("User not found", 404, "No user found with this email"));
   }
 
   const resetToken = jwt.sign(
     { userId: user._id },
-    process.env.RESET_SECRET,
+    process.env.RESET_SECRET
     // { expiresIn: "15m" }
   );
 
@@ -326,13 +292,7 @@ export const resetPassword = async (req, res, next) => {
 
   const user = await User.findById(decoded.userId);
   if (!user) {
-    return next(
-      new ErrorClass(
-        "Invalid token or user not found",
-        404,
-        "Invalid token or user not found",
-      ),
-    );
+    return next(new ErrorClass("Invalid token or user not found", 404, "Invalid token or user not found"));
   }
 
   user.password = hashSync(newPassword, Number(process.env.SALT_ROUNDS) || 10);
@@ -390,9 +350,7 @@ export const removeFavorite = async (req, res, next) => {
     });
   }
 
-  user.favorites = user.favorites.filter(
-    (id) => id.toString() !== restaurantId,
-  );
+  user.favorites = user.favorites.filter((id) => id.toString() !== restaurantId);
   await user.save();
 
   res.status(200).json({
