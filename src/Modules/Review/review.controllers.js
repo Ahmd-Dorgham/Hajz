@@ -102,26 +102,18 @@ export const updateReview = async (req, res, next) => {
 export const deleteReview = async (req, res, next) => {
   const { id } = req.params;
 
+  // Find the review first to check ownership
   const review = await Review.findById(id);
+
   if (!review) {
-    return next(new ErrorClass("Review not found", 404));
+    return next(new ErrorClass("Review not found", 404, "The requested review does not exist"));
   }
 
   if (review.userId.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized to delete this review", 403));
+    return next(new ErrorClass("Unauthorized", 403, "You can only delete your own reviews"));
   }
 
-  const restaurantId = review.restaurantId;
-
-  // Delete the review
   await Review.findByIdAndDelete(id);
-
-  // Update the avgRating in the Restaurant model
-  const allReviews = await Review.find({ restaurantId });
-  const totalRating = allReviews.reduce((sum, r) => sum + r.rate, 0);
-  const avgRating = allReviews.length ? totalRating / allReviews.length : 0;
-
-  await Restaurant.findByIdAndUpdate(restaurantId, { avgRating }, { new: true });
 
   res.status(200).json({
     status: "success",

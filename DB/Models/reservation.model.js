@@ -49,5 +49,13 @@ const reservationSchema = new Schema(
   { timestamps: true }
 );
 
+reservationSchema.pre("findOneAndDelete", async function (next) {
+  const reservationId = this.getQuery()._id;
+
+  await mongoose.models.Review.deleteMany({ reservationId });
+
+  next();
+});
+
 const Reservation = model("Reservation", reservationSchema);
 export default mongoose.models.Reservation || Reservation;
