@@ -1,3 +1,9 @@
+import Table from "./table.model.js";
+import VipRoom from "./vip-room.model.js";
+import Meal from "./meal.model.js";
+import Reservation from "./reservation.model.js";
+import Review from "./review.model.js";
+
 import mongoose from "mongoose";
 const { Schema, model } = mongoose;
 
@@ -50,12 +56,29 @@ const restaurantSchema = new Schema(
     },
     categories: {
       type: [String],
-      enum: ["desserts", "drinks", "meals"], // Allowed categories
+      enum: ["desserts", "drinks", "meals"],
       required: true,
     },
   },
   { timestamps: true }
 );
+
+restaurantSchema.pre("findOneAndDelete", async function (next) {
+  const restaurantId = this.getQuery()._id;
+
+  try {
+    await Promise.all([
+      Table.deleteMany({ restaurantId }),
+      VipRoom.deleteMany({ restaurantId }),
+      Meal.deleteMany({ restaurantId }),
+      Reservation.deleteMany({ restaurantId }),
+      Review.deleteMany({ restaurantId }),
+    ]);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const Restaurant = model("Restaurant", restaurantSchema);
 export default mongoose.models.Restaurant || Restaurant;

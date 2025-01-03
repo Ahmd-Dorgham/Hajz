@@ -81,7 +81,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
-  await Table.findByIdAndDelete(id);
+  await Table.findOneAndDelete({ _id: id });
 
   res.status(200).json({
     status: "success",

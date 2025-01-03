@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 import { systemRoles } from "../../src/Utils/systemRoles.js";
+import Restaurant from "./restaurant.model.js";
+import Table from "./table.model.js";
+import VipRoom from "./vip-room.model.js";
+import Meal from "./meal.model.js";
+import Reservation from "./reservation.model.js";
+import Review from "./review.model.js";
 const { Schema, model } = mongoose;
 
 const userSchema = new Schema(
@@ -45,7 +51,7 @@ const userSchema = new Schema(
     restaurant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
-      default: null, // Initially no restaurant assigned
+      default: null,
     },
     favorites: [
       {
@@ -56,6 +62,30 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const userId = this.getQuery()._id;
+
+    const relatedRestaurant = await Restaurant.findOneAndDelete({ ownedBy: userId });
+    if (relatedRestaurant) {
+      const restaurantId = relatedRestaurant._id;
+      await Promise.all([
+        Table.deleteMany({ restaurantId }),
+        VipRoom.deleteMany({ restaurantId }),
+        Meal.deleteMany({ restaurantId }),
+        Reservation.deleteMany({ restaurantId }),
+        Review.deleteMany({ restaurantId }),
+      ]);
+    }
+
+    await Promise.all([Reservation.deleteMany({ userId }), Review.deleteMany({ userId })]);
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const User = mongoose.models.User || model("User", userSchema);
 export default User;

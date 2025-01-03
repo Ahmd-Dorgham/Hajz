@@ -188,7 +188,7 @@ export const deleteRestaurant = async (req, res, next) => {
     }
   }
 
-  await Restaurant.findByIdAndDelete(id);
+  await Restaurant.findOneAndDelete({ _id: id });
 
   res.json({
     status: "success",

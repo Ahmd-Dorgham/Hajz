@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import Reservation from "./reservation.model.js";
+
 const { Schema, model } = mongoose;
 
 const tableSchema = new Schema(
@@ -31,5 +33,12 @@ const tableSchema = new Schema(
   { timestamps: true }
 );
 
+tableSchema.pre("findOneAndDelete", async function (next) {
+  const tableId = this.getQuery()._id;
+
+  await Reservation.deleteMany({ tableId });
+
+  next();
+});
 const Table = model("Table", tableSchema);
 export default mongoose.models.Table || Table;

@@ -229,7 +229,7 @@ export const deleteAccount = async (req, res, next) => {
     await cloudinaryConfig().uploader.destroy(user.image.public_id);
   }
 
-  await User.findByIdAndDelete(userId);
+  await User.findOneAndDelete({ _id: userId });
 
   res.status(200).json({
     status: "success",
