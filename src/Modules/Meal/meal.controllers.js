@@ -1,6 +1,6 @@
 import Meal from "../../../DB/Models/meal.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
-import { ErrorClass } from "../../Utils/error-class.utils.js";
+import Reservation from "../../../DB/Models/reservation.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
 /**
@@ -95,6 +95,17 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
   if (meal.restaurantId.ownedBy.toString() !== req.authUser._id.toString()) {
     return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  // Check if the meal is part of any reservation
+  const reservationExists = await Reservation.findOne({
+    "mealId.meal": id,
+  });
+  if (reservationExists) {
+    return res.status(400).json({
+      status: "error",
+      message: "Cannot delete meal as it is associated with a reservation.",
+    });
   }
 
   if (meal.image?.public_id) {
