@@ -1,6 +1,6 @@
-# ihjez – Restaurant Reservation System
+# Ihjiz – Restaurant Reservation System
 
-ihjez is a powerful and user-friendly restaurant reservation system designed to streamline restaurant operations and enhance user experience. The system allows restaurant owners to manage reservations, meals, tables, and VIP rooms efficiently, while users can explore restaurants, book reservations, and provide feedback seamlessly.
+Ihjiz is a powerful and user-friendly restaurant reservation system designed to streamline restaurant operations and enhance user experience. The system allows restaurant owners to manage reservations, meals, tables, and VIP rooms efficiently, while users can explore restaurants, book reservations, and provide feedback seamlessly.
 
 ---
 
