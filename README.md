@@ -37,58 +37,6 @@ Hajz is a powerful and user-friendly restaurant reservation system designed to s
 
 ---
 
-## Installation and Setup
-
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/your-username/hajz.git
-   cd hajz
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**
-   Create a `.env` file with the following variables:
-   ```env
-   PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/hajz_db
-   JWT_SECRET=your_jwt_secret
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   EMAIL_USER=your_email
-   EMAIL_PASS=your_email_password
-   ```
-
-4. **Start the Application**
-   ```bash
-   npm run dev
-   ```
-   The server will start on the specified port (default: 3000).
-
----
-
-## Project Structure
-
-```plaintext
-Hajz/
-├── Controllers/
-├── Middlewares/
-├── Models/
-├── Routes/
-├── Services/
-├── Utils/
-├── .env
-├── index.js
-├── package.json
-└── README.md
-```
-
----
-
 ## Routes Overview
 
 ### User Routes
@@ -100,6 +48,12 @@ Hajz/
 | PUT    | `/update`           | Update profile details  |
 | POST   | `/favorites/add`    | Add favorite restaurant |
 | GET    | `/favorites`        | View favorite restaurants |
+| GET    | `/verify/:token`    | Verify user email       |
+| GET    | `/verify-status`    | Check verification status |
+| PATCH  | `/change-password`  | Change password         |
+| DELETE | `/delete-account`   | Delete user account     |
+| POST   | `/forgot-password`  | Send password reset request |
+| POST   | `/reset-password`   | Reset user password     |
 
 ### Restaurant Routes
 | Method | Endpoint                  | Description                     |
@@ -108,6 +62,8 @@ Hajz/
 | PUT    | `/update/:id`             | Update restaurant details       |
 | GET    | `/`                       | View all restaurants            |
 | GET    | `/owner/:ownerId`         | Restaurants by specific owner   |
+| DELETE | `/delete/:id`             | Delete a restaurant             |
+| GET    | `/search`                 | Search restaurants by category  |
 
 ### Meal Routes
 | Method | Endpoint              | Description                     |
@@ -116,23 +72,46 @@ Hajz/
 | PUT    | `/update/:id`         | Update meal details             |
 | DELETE | `/delete/:id`         | Delete a meal                   |
 | GET    | `/restaurant/:id`     | View meals by restaurant        |
+| GET    | `/:id`                | Get meal details by ID          |
 
 ### Reservation Routes
 | Method | Endpoint                         | Description                     |
 |--------|----------------------------------|---------------------------------|
 | POST   | `/create`                        | Create a reservation            |
-| GET    | `/restaurant/:id/day`            | View daily reservations         |
+| PUT    | `/update/:id`                    | Update reservation              |
+| DELETE | `/delete/:id`                    | Delete reservation              |
+| GET    | `/restaurant/:id`                | Reservations by restaurant      |
 | PATCH  | `/status/:id`                    | Update reservation status       |
+| GET    | `/user`                          | View user’s reservations       |
+| GET    | `/table/:tableId`                | Reservations by table ID        |
+| GET    | `/restaurant/:restaurantId/day`  | Daily reservations by restaurant |
+| GET    | `/:id`                           | Get specific reservation        |
 
----
+### Review Routes
+| Method | Endpoint                  | Description                     |
+|--------|---------------------------|---------------------------------|
+| POST   | `/create`                 | Add a review                    |
+| PUT    | `/update/:id`             | Update a review                 |
+| DELETE | `/delete/:id`             | Delete a review                 |
+| GET    | `/restaurant/:id`         | View reviews for a restaurant   |
 
-## Contributing
+### Table Routes
+| Method | Endpoint                       | Description                     |
+|--------|--------------------------------|---------------------------------|
+| POST   | `/create`                      | Add a new table                 |
+| PUT    | `/update/:id`                  | Update table details            |
+| DELETE | `/delete/:id`                  | Delete a table                  |
+| GET    | `/restaurant/:id`             | View tables for a restaurant    |
+| GET    | `/:id`                        | View table details by ID        |
 
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-branch`.
-3. Commit your changes: `git commit -m "Add new feature"`.
-4. Push to the branch: `git push origin feature-branch`.
-5. Submit a pull request.
+### VIP Room Routes
+| Method | Endpoint                       | Description                     |
+|--------|--------------------------------|---------------------------------|
+| POST   | `/create`                      | Add a new VIP room              |
+| PATCH  | `/update/:id`                  | Update VIP room details         |
+| DELETE | `/delete/:id`                  | Delete a VIP room               |
+| GET    | `/restaurant/:id`             | View VIP rooms for a restaurant |
+| GET    | `/:id`                        | View VIP room details by ID     |
 
 ---
 
