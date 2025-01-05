@@ -165,8 +165,8 @@ export const getAllReservationsForRestaurant = async (req, res, next) => {
   const reservations = await Reservation.find({ restaurantId })
     .populate("userId", "name email")
     .populate("tableId", "tableNumber capacity")
-    .populate("mealId", "name price")
-    .sort({ date: 1, time: 1 }); // Sort by date and time (ascending)
+    .populate("mealId.meal", "name price")
+    .sort({ date: 1, time: 1 });
 
   res.status(200).json({
     status: "success",
