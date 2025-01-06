@@ -34,7 +34,7 @@ const userSchema = new Schema(
     },
     isConfirmed: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     image: {
       type: {
