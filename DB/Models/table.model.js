@@ -29,6 +29,10 @@ const tableSchema = new Schema(
       date: { type: String }, // e.g., "2024-12-15"
       time: { type: String }, // e.g., "4:00 PM"
     },
+    image: {
+      secure_url: String,
+      public_id: String,
+    },
   },
   { timestamps: true }
 );
@@ -40,5 +44,6 @@ tableSchema.pre("findOneAndDelete", async function (next) {
 
   next();
 });
+
 const Table = model("Table", tableSchema);
 export default mongoose.models.Table || Table;

@@ -1,10 +1,13 @@
 import Table from "../../../DB/Models/table.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
+import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
 /**
  * @api {POST} /tables/create Create a new Table
- */ export const createTable = async (req, res, next) => {
+ */
+
+export const createTable = async (req, res, next) => {
   const { restaurantId, tableNumber, capacity } = req.body;
 
   if (!restaurantId || !tableNumber || !capacity) {
@@ -25,7 +28,25 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return next(new ErrorClass("Table number already exists", 400, "Duplicate table number"));
   }
 
-  const tableInstance = new Table({ restaurantId, tableNumber, capacity });
+  let image = null;
+  if (req.file) {
+    try {
+      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
+        folder: "Restaurant/tableImages",
+      });
+      image = { secure_url, public_id };
+    } catch (error) {
+      return next(new ErrorClass("Image upload failed", 500, error.message));
+    }
+  }
+
+  const tableInstance = new Table({
+    restaurantId,
+    tableNumber,
+    capacity,
+    image,
+  });
+
   const newTable = await tableInstance.save();
 
   res.status(201).json({
@@ -50,13 +71,20 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
-  if (!tableNumber && !capacity && !status) {
-    return next(new ErrorClass("No fields provided for update", 400, "Missing fields"));
-  }
-
-  if (tableNumber) table.tableNumber = Number(tableNumber);
-  if (capacity) table.capacity = Number(capacity);
+  if (tableNumber) table.tableNumber = tableNumber.trim();
+  if (capacity && !isNaN(Number(capacity))) table.capacity = Number(capacity);
   if (status && ["available", "reserved"].includes(status)) table.status = status;
+
+  if (req.file) {
+    if (table.image?.public_id) {
+      await cloudinaryConfig().uploader.destroy(table.image.public_id);
+    }
+
+    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
+      folder: "Restaurant/tableImages",
+    });
+    table.image = { secure_url, public_id };
+  }
 
   const updatedTable = await table.save();
 
@@ -81,7 +109,19 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
-  await Table.findOneAndDelete({ _id: id });
+  const reservationExists = await Reservation.findOne({ tableId: id });
+  if (reservationExists) {
+    return res.status(400).json({
+      status: "error",
+      message: "Cannot delete table as it is associated with a reservation.",
+    });
+  }
+
+  if (table.image?.public_id) {
+    await cloudinaryConfig().uploader.destroy(table.image.public_id);
+  }
+
+  await Table.findByIdAndDelete(id);
 
   res.status(200).json({
     status: "success",
@@ -99,7 +139,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
   }
 
-  const tables = await Table.find({ restaurantId });
+  const tables = await Table.find({ restaurantId }).select("tableNumber capacity status image");
 
   if (tables.length === 0) {
     return res.status(200).json({
