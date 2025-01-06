@@ -5,18 +5,25 @@ import { extensions } from "../../Utils/file-extensions.utils.js";
 import * as controllers from "./restaurant.controllers.js";
 import { errorHandler } from "../../Middlewares/error-handling.middleware.js";
 import { systemRoles } from "../../Utils/systemRoles.js";
-
+import express from "express";
 const restaurantRouter = Router();
 
 restaurantRouter.post(
-  "/create",
+  "/create/data",
+  auth([systemRoles.restaurantOwner]),
+  express.json(),
+  errorHandler(controllers.createRestaurantData)
+);
+
+restaurantRouter.post(
+  "/create/images",
   auth([systemRoles.restaurantOwner]),
   multerHost({ allowedExtensions: extensions.Images }).fields([
     { name: "profileImage", maxCount: 1 },
     { name: "layoutImage", maxCount: 1 },
     { name: "galleryImages", maxCount: 10 },
   ]),
-  errorHandler(controllers.createRestaurant)
+  errorHandler(controllers.uploadRestaurantImages)
 );
 restaurantRouter.put(
   "/update/:id",

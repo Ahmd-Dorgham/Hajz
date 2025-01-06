@@ -4,10 +4,7 @@ import User from "../../../DB/Models/user.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
 
-/**
- * @api {POST} /restaurants/create  Create a new restaurant
- */
-export const createRestaurant = async (req, res, next) => {
+export const createRestaurantData = async (req, res, next) => {
   const { name, address, phone, openingHours, categories } = req.body;
 
   if (!categories || !Array.isArray(categories) || categories.length === 0) {
@@ -20,16 +17,41 @@ export const createRestaurant = async (req, res, next) => {
     return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
   }
 
-  if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
-    return next(new ErrorClass("Profile and layout images are required", 400));
-  }
-
   const existingRestaurant = await Restaurant.findOne({
     ownedBy: req.authUser._id,
   });
 
   if (existingRestaurant) {
     return next(new ErrorClass("You already own a restaurant. Each owner can only have one restaurant.", 400));
+  }
+
+  const restaurantInstance = new Restaurant({
+    name,
+    address,
+    phone,
+    openingHours,
+    categories,
+    ownedBy: req.authUser._id,
+  });
+
+  const newRestaurant = await restaurantInstance.save();
+
+  res.status(201).json({
+    status: "success",
+    message: "Restaurant data saved successfully",
+    restaurant: newRestaurant,
+  });
+};
+
+export const uploadRestaurantImages = async (req, res, next) => {
+  if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
+    return next(new ErrorClass("Profile and layout images are required", 400));
+  }
+
+  const { restaurantId } = req.body;
+  const restaurant = await Restaurant.findById(restaurantId);
+  if (!restaurant) {
+    return next(new ErrorClass("Restaurant not found", 404));
   }
 
   const { secure_url: profileSecureUrl, public_id: profilePublicId } = await cloudinaryConfig().uploader.upload(
@@ -56,27 +78,16 @@ export const createRestaurant = async (req, res, next) => {
     }
   }
 
-  const restaurantInstance = new Restaurant({
-    name,
-    address,
-    phone,
-    openingHours,
-    categories,
-    profileImage: { secure_url: profileSecureUrl, public_id: profilePublicId },
-    layoutImage: { secure_url: layoutSecureUrl, public_id: layoutPublicId },
-    galleryImages,
-    ownedBy: req.authUser._id,
-  });
+  restaurant.profileImage = { secure_url: profileSecureUrl, public_id: profilePublicId };
+  restaurant.layoutImage = { secure_url: layoutSecureUrl, public_id: layoutPublicId };
+  restaurant.galleryImages = galleryImages;
 
-  const newRestaurant = await restaurantInstance.save();
+  await restaurant.save();
 
-  // Update the user's restaurant key with the restaurant ID
-  await User.findByIdAndUpdate(req.authUser._id, { restaurant: newRestaurant._id }, { new: true });
-
-  res.status(201).json({
+  res.status(200).json({
     status: "success",
-    message: "Restaurant created successfully",
-    restaurant: newRestaurant,
+    message: "Images uploaded successfully",
+    restaurant,
   });
 };
 
