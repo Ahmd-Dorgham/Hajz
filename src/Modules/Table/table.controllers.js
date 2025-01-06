@@ -1,8 +1,8 @@
 import Table from "../../../DB/Models/table.model.js";
-import Restaurant from "../../../DB/Models/restaurant.model.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
-
+import Restaurant from "../../../DB/Models/restaurant.model.js";
+import Reservation from "../../../DB/Models/reservation.model.js";
 /**
  * @api {POST} /tables/create Create a new Table
  */
