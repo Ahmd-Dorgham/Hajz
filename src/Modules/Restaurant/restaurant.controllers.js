@@ -7,12 +7,14 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
 export const createRestaurantData = async (req, res, next) => {
   const { name, address, phone, openingHours, categories } = req.body;
 
-  if (!categories || !Array.isArray(categories) || categories.length === 0) {
-    return next(new ErrorClass("Categories are required and should be an array", 400));
+  const normalizedCategories = Array.isArray(categories) ? categories : [categories];
+
+  if (!normalizedCategories || normalizedCategories.length === 0) {
+    return next(new ErrorClass("Categories are required and should be an array or a single string", 400));
   }
 
   const allowedCategories = ["desserts", "drinks", "meals"];
-  const invalidCategories = categories.filter((category) => !allowedCategories.includes(category));
+  const invalidCategories = normalizedCategories.filter((category) => !allowedCategories.includes(category));
   if (invalidCategories.length > 0) {
     return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
   }
@@ -30,7 +32,7 @@ export const createRestaurantData = async (req, res, next) => {
     address,
     phone,
     openingHours,
-    categories,
+    categories: normalizedCategories,
     ownedBy: req.authUser._id,
   });
 
@@ -42,7 +44,6 @@ export const createRestaurantData = async (req, res, next) => {
     restaurant: newRestaurant,
   });
 };
-
 export const uploadRestaurantImages = async (req, res, next) => {
   if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
     return next(new ErrorClass("Profile and layout images are required", 400));
