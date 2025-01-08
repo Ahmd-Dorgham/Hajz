@@ -3,7 +3,6 @@ import Restaurant from "../../../DB/Models/restaurant.model.js";
 import User from "../../../DB/Models/user.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
-
 export const createRestaurantData = async (req, res, next) => {
   const { name, address, phone, openingHours, categories } = req.body;
 
@@ -19,30 +18,41 @@ export const createRestaurantData = async (req, res, next) => {
     return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
   }
 
-  const existingRestaurant = await Restaurant.findOne({
-    ownedBy: req.authUser._id,
-  });
+  try {
+    const existingRestaurant = await Restaurant.findOne({
+      ownedBy: req.authUser._id,
+    });
 
-  if (existingRestaurant) {
-    return next(new ErrorClass("You already own a restaurant. Each owner can only have one restaurant.", 400));
+    if (existingRestaurant) {
+      return next(new ErrorClass("You already own a restaurant. Each owner can only have one restaurant.", 400));
+    }
+
+    const restaurantInstance = new Restaurant({
+      name,
+      address,
+      phone,
+      openingHours,
+      categories: normalizedCategories,
+      ownedBy: req.authUser._id,
+    });
+
+    const newRestaurant = await restaurantInstance.save();
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.authUser._id,
+      { restaurant: newRestaurant._id },
+      { new: true }
+    );
+
+    res.status(201).json({
+      status: "success",
+      message: "Restaurant data saved successfully and linked to the owner",
+      restaurant: newRestaurant,
+      owner: updatedUser,
+    });
+  } catch (error) {
+    next(error);
   }
-
-  const restaurantInstance = new Restaurant({
-    name,
-    address,
-    phone,
-    openingHours,
-    categories: normalizedCategories,
-    ownedBy: req.authUser._id,
-  });
-
-  const newRestaurant = await restaurantInstance.save();
-
-  res.status(201).json({
-    status: "success",
-    message: "Restaurant data saved successfully",
-    restaurant: newRestaurant,
-  });
 };
 export const uploadRestaurantImages = async (req, res, next) => {
   if (!req.files || !req.files.profileImage || !req.files.layoutImage) {
