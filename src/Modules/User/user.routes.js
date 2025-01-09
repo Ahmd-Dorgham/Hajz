@@ -23,6 +23,7 @@ userRouter.delete("/delete-account", auth(["user", "restaurantOwner"]), errorHan
 userRouter.get("/profile", auth(["user", "restaurantOwner"]), errorHandler(controller.getUserProfile));
 
 userRouter.post("/forgot-password", errorHandler(controller.forgotPassword));
+//TODO: to be handled
 userRouter.post("/reset-password", errorHandler(controller.resetPassword));
 
 userRouter.post("/favorites/add", auth(["user"]), errorHandler(controller.addFavorite));

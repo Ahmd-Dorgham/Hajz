@@ -294,17 +294,15 @@ export const getAllRestaurants = async (req, res, next) => {
 
     // Build query for filtering
     const query = {};
-    if (name) query.name = { $regex: name, $options: "i" }; // Case-insensitive search
-    if (address) query.address = { $regex: address, $options: "i" }; // Case-insensitive search
+    if (name) query.name = { $regex: name, $options: "i" };
+    if (address) query.address = { $regex: address, $options: "i" };
     if (category) query.categories = { $in: category.split(",") };
     if (avgRating) query.avgRating = { $gte: avgRating };
 
-    // Calculate skip for pagination
     const skip = (page - 1) * limit;
 
-    // Fetch restaurants with filtering, pagination, and population
     let restaurants = await Restaurant.find(query)
-      .populate("ownedBy", "name email phone") // Include owner details
+      .populate("ownedBy", "name email phone")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ [sortBy]: -1 } || { createdAt: -1 });
@@ -314,7 +312,6 @@ export const getAllRestaurants = async (req, res, next) => {
 
       const meals = await Meal.find({ restaurantId: { $in: restaurantIds } });
 
-      // filter restaurants based on the meals price average
       restaurants = restaurants.filter((restaurant) => {
         const restaurantMeals = meals.filter((meal) => meal.restaurantId.toString() === restaurant._id.toString());
         const avgPrices = restaurantMeals.map((meal) => meal.price);
@@ -324,7 +321,6 @@ export const getAllRestaurants = async (req, res, next) => {
       });
     }
 
-    // Get total count for pagination metadata
     const totalRestaurants = await Restaurant.countDocuments(query);
 
     res.status(200).json({
