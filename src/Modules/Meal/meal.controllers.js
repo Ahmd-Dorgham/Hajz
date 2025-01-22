@@ -2,6 +2,7 @@ import Meal from "../../../DB/Models/meal.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
 import Reservation from "../../../DB/Models/reservation.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
+import predictMealService from "../../Services/predict-meal-service.js";
 
 /**
  * @api {POST} /meals/create  Create a new Meal
@@ -19,9 +20,12 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 
   let image = null;
   if (req.file) {
-    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-      folder: "Restaurant/mealImages",
-    });
+    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(
+      req.file.path,
+      {
+        folder: "Restaurant/mealImages",
+      },
+    );
     image = { secure_url, public_id };
   }
 
@@ -68,9 +72,12 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
       await cloudinaryConfig().uploader.destroy(meal.image.public_id);
     }
 
-    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-      folder: "Restaurant/mealImages",
-    });
+    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(
+      req.file.path,
+      {
+        folder: "Restaurant/mealImages",
+      },
+    );
     meal.image = { secure_url, public_id };
   }
 
@@ -121,15 +128,25 @@ import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
 };
 
 /**
- * @api {GET} /meals/restaurant/:restaurantId  Get All Meals for a Restaurant
+ * @api {GET} /meals/restaurant/:restaurantId?search=''  Get All Meals for a Restaurant
  */ export const getAllMealsForRestaurant = async (req, res) => {
   const { restaurantId } = req.params;
+  const { search } = req.query;
 
-  const meals = await Meal.find({ restaurantId });
+  let predictedMealsNames = [];
+  if (search) {
+    predictedMealsNames = await predictMealService(search);
+  }
+  const meals = await Meal.find({
+    name: { $in: predictedMealsNames },
+    restaurantId,
+  });
 
   res.status(200).json({
     status: "success",
-    message: meals.length ? "Meals retrieved successfully" : "No meals found for this restaurant",
+    message: meals.length
+      ? "Meals retrieved successfully"
+      : "No meals found for this restaurant",
     meals,
   });
 };
