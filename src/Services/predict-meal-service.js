@@ -1,12 +1,13 @@
 import fs from "fs";
 import cosineSimilarity from "cosine-similarity";
 import Fuse from "fuse.js"; // Fuzzy search library
+import path from "node:path";
 
 export default function predictMealService(mealName) {
   // Load the model
-  const modelData = JSON.parse(
-    fs.readFileSync("recommendation_model.json", "utf8"),
-  );
+  // let usersPath = path.join(process.cwd(), 'users.json');
+  let modelPath = path.join(process.cwd(), "recommendation_model.json");
+  const modelData = JSON.parse(fs.readFileSync(modelPath, "utf8"));
   const { data, vectors, vocabulary } = modelData;
 
   // Preprocess vocabulary to extract unique words
