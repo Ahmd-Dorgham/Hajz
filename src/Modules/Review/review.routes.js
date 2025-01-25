@@ -5,10 +5,25 @@ import * as controller from "./review.controllers.js";
 
 const reviewRouter = Router();
 
-reviewRouter.post("/create", auth(["user"]), errorHandler(controller.createReview));
-reviewRouter.put("/update/:id", auth(["user"]), errorHandler(controller.updateReview));
-reviewRouter.delete("/delete/:id", auth(["user"]), errorHandler(controller.deleteReview));
+reviewRouter.post(
+  "/create",
+  auth(["user"]),
+  errorHandler(controller.createReview),
+);
+reviewRouter.put(
+  "/update/:id",
+  auth(["user"]),
+  errorHandler(controller.updateReview),
+);
+reviewRouter.delete(
+  "/delete/:id",
+  auth(["user"]),
+  errorHandler(controller.deleteReview),
+);
 
-reviewRouter.get("/restaurant/:restaurantId", errorHandler(controller.getAllReviewsForRestaurant));
+reviewRouter.get(
+  "/restaurant/:restaurantId",
+  errorHandler(controller.getAllReviewsForRestaurant),
+);
 
 export { reviewRouter };
