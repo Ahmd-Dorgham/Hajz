@@ -151,21 +151,40 @@ export const deleteReview = async (req, res, next) => {
 //
 /**
  * @api {GET} /reviews/restaurant/:restaurantId Get all reviews for a specific restaurant
+ * @apiQuery {Number} page Page number (default: 1)
+ * @apiQuery {Number} limit Number of reviews per page (default: 10)
  */
 export const getAllReviewsForRestaurant = async (req, res, next) => {
   const { restaurantId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-  const reviews = await Review.find({ restaurantId })
-    .populate("userId", "name email")
-    .populate("reservationId", "date time status");
+  try {
+    const totalReviews = await Review.countDocuments({ restaurantId });
+    const reviews = await Review.find({ restaurantId })
+      .populate("userId", "name email")
+      .populate("reservationId", "date time status")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-  if (!reviews || reviews.length === 0) {
-    return next(new ErrorClass("No reviews found for this restaurant", 404));
+    if (!reviews || reviews.length === 0) {
+      return next(new ErrorClass("No reviews found for this restaurant", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "Reviews fetched successfully",
+      data: reviews,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalReviews / limit),
+        totalReviews,
+        limit,
+      },
+    });
+  } catch (error) {
+    next(new ErrorClass("Error fetching reviews", 500));
   }
-
-  res.status(200).json({
-    status: "success",
-    message: "Reviews fetched successfully",
-    data: reviews,
-  });
 };
