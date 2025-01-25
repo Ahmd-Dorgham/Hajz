@@ -12,11 +12,11 @@ export const createRestaurantData = async (req, res, next) => {
     return next(new ErrorClass("Categories are required and should be an array or a single string", 400));
   }
 
-  const allowedCategories = ["desserts", "drinks", "meals"];
-  const invalidCategories = normalizedCategories.filter((category) => !allowedCategories.includes(category));
-  if (invalidCategories.length > 0) {
-    return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
-  }
+  // const allowedCategories = ["desserts", "drinks", "meals"];
+  // const invalidCategories = normalizedCategories.filter((category) => !allowedCategories.includes(category));
+  // if (invalidCategories.length > 0) {
+  //   return next(new ErrorClass(`Invalid categories: ${invalidCategories.join(", ")}`, 400));
+  // }
 
   try {
     const existingRestaurant = await Restaurant.findOne({
