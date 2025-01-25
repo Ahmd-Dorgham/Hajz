@@ -132,7 +132,14 @@ import { undefined } from "webidl-conversions";
  * @api {GET} /meals/restaurant/:restaurantId?search=''  Get All Meals for a Restaurant
  */ export const getAllMealsForRestaurant = async (req, res) => {
   const { restaurantId } = req.params;
-  const { search } = req.query;
+  const { search, page, limit } = req.query;
+
+  const pagination = {
+    page: page || 1,
+    limit: limit || 1000,
+  };
+
+  const skip = (pagination.page - 1) * pagination.limit;
 
   let predictedMealsNames = [];
   let meals = [];
@@ -141,11 +148,15 @@ import { undefined } from "webidl-conversions";
     meals = await Meal.find({
       name: { $in: predictedMealsNames },
       restaurantId,
-    });
+    })
+      .skip(skip)
+      .limit(pagination.limit);
   } else {
     meals = await Meal.find({
       restaurantId,
-    });
+    })
+      .skip(skip)
+      .limit(pagination.limit);
   }
 
   res.status(200).json({
