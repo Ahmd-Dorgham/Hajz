@@ -3,6 +3,7 @@ import Reservation from "../../../DB/Models/reservation.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
 import { ErrorClass } from "../../Utils/error-class.utils.js";
 import { flagReview } from "../../Services/flag-review-service.js";
+import mongoose from "mongoose";
 
 /**
  * @api {POST} /reviews/create Create a new review
@@ -161,13 +162,38 @@ export const getAllReviewsForRestaurant = async (req, res, next) => {
   const skip = (page - 1) * limit;
 
   try {
-    const totalReviews = await Review.countDocuments({ restaurantId });
-    const reviews = await Review.find({ restaurantId })
+    // Correctly create ObjectId using new
+    const restaurantObjectId = new mongoose.Types.ObjectId(restaurantId);
+
+    const totalReviews = await Review.countDocuments({
+      restaurantId: restaurantObjectId,
+    });
+    const reviews = await Review.find({ restaurantId: restaurantObjectId })
       .populate("userId", "name email")
       .populate("reservationId", "date time status")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
+
+    const avgRating =
+      await Restaurant.findById(restaurantObjectId).select("avgRating");
+
+    const ratings = await Review.aggregate([
+      {
+        $match: {
+          restaurantId: restaurantObjectId,
+        },
+      },
+      {
+        $group: {
+          _id: "$rate",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
 
     if (!reviews || reviews.length === 0) {
       return next(new ErrorClass("No reviews found for this restaurant", 404));
@@ -183,8 +209,11 @@ export const getAllReviewsForRestaurant = async (req, res, next) => {
         totalReviews,
         limit,
       },
+      avgRating: avgRating.avgRating,
+      ratings,
     });
   } catch (error) {
+    console.log(error);
     next(new ErrorClass("Error fetching reviews", 500));
   }
 };
