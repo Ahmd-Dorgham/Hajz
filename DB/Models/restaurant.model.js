@@ -56,11 +56,11 @@ const restaurantSchema = new Schema(
     },
     categories: {
       type: [String],
-      enum: ["desserts", "drinks", "meals"],
+      // enum: ["desserts", "drinks", "meals"],
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 restaurantSchema.pre("findOneAndDelete", async function (next) {
