@@ -186,3 +186,50 @@ export const getMealById = async (req, res) => {
     meal,
   });
 };
+
+/**
+ * @api {GET} /meals/featured  Get Most Used Meals
+ */
+export const getMostUsedMeals = async (req, res) => {
+  const meals = await Meal.aggregate([
+    {
+      $lookup: {
+        from: "reservations",
+        localField: "_id",
+        foreignField: "mealId.meal",
+        as: "reservations",
+      },
+    },
+    {
+      $unwind: "$reservations",
+    },
+    {
+      $match: {
+        "reservations.createdAt": {
+          $gte: new Date(new Date().setDate(new Date().getDate() - 7)),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        image: { $first: "$image" },
+        desc: { $first: "$desc" },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { count: -1 },
+    },
+    {
+      $limit: 10,
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    message: "Most used meals retrieved successfully",
+    meals,
+  });
+};

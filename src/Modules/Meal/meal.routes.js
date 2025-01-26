@@ -12,18 +12,27 @@ mealRouter.post(
   "/create",
   auth([systemRoles.restaurantOwner]),
   multerHost({ allowedExtensions: extensions.Images }).single("image"),
-  errorHandler(controllers.createMeal)
+  errorHandler(controllers.createMeal),
 );
 mealRouter.put(
   "/update/:id",
   auth([systemRoles.restaurantOwner]),
   multerHost({ allowedExtensions: extensions.Images }).single("image"),
-  errorHandler(controllers.updateMeal)
+  errorHandler(controllers.updateMeal),
 );
 
-mealRouter.delete("/delete/:id", auth([systemRoles.restaurantOwner]), errorHandler(controllers.deleteMeal));
+mealRouter.delete(
+  "/delete/:id",
+  auth([systemRoles.restaurantOwner]),
+  errorHandler(controllers.deleteMeal),
+);
 
-mealRouter.get("/restaurant/:restaurantId", errorHandler(controllers.getAllMealsForRestaurant));
+mealRouter.get(
+  "/restaurant/:restaurantId",
+  errorHandler(controllers.getAllMealsForRestaurant),
+);
+
+mealRouter.get("/featured", errorHandler(controllers.getMostUsedMeals));
 
 mealRouter.get("/:id", errorHandler(controllers.getMealById));
 export { mealRouter };
