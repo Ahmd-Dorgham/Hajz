@@ -216,6 +216,7 @@ export const getMostUsedMeals = async (req, res) => {
         name: { $first: "$name" },
         image: { $first: "$image" },
         desc: { $first: "$desc" },
+        restaurantId: { $first: "$restaurantId" },
         count: { $sum: 1 },
       },
     },
