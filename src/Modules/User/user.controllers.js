@@ -46,12 +46,12 @@ export const signUp = async (req, res, next) => {
     html: `<a href='${process.env.DOMAIN}users/verify/${token}'>Click here to confirm your email</a>`,
   });
 
-  const newUser = await userInstance.save();
+  // const newUser = await userInstance.save();
 
   res.status(201).json({
     status: "success",
     message: "User created successfully",
-    user: newUser,
+    // user: newUser,
   });
 };
 /**
