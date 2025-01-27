@@ -13,7 +13,6 @@ const tableSchema = new Schema(
     tableNumber: {
       type: String,
       required: true,
-      unique: true,
     },
     capacity: {
       type: Number,
