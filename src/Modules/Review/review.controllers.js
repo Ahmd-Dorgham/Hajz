@@ -7,38 +7,101 @@ import mongoose from "mongoose";
 
 /**
  * @api {POST} /reviews/create Create a new review
- */
+//  */
+// export const createReview = async (req, res, next) => {
+//   const { reservationId, comment, rate } = req.body;
+
+//   if (!reservationId || !rate) {
+//     return next(new ErrorClass("Reservation ID and rate are required", 400));
+//   }
+
+//   const reservation = await Reservation.findById(reservationId);
+//   if (!reservation) {
+//     return next(new ErrorClass("Reservation not found", 404));
+//   }
+
+//   if (reservation.userId.toString() !== req.authUser._id.toString()) {
+//     return next(new ErrorClass("Unauthorized to review this reservation", 403));
+//   }
+
+//   if (reservation.status !== "completed") {
+//     return next(
+//       new ErrorClass("Cannot review a reservation that is not completed", 400),
+//     );
+//   }
+
+//   const existingReview = await Review.findOne({ reservationId });
+//   if (existingReview) {
+//     return next(
+//       new ErrorClass("You have already reviewed this reservation", 400),
+//     );
+//   }
+
+//   const restaurantId = reservation.restaurantId;
+
+//   const review = new Review({
+//     userId: req.authUser._id,
+//     reservationId,
+//     restaurantId,
+//     comment,
+//     rate,
+//   });
+
+//   const newReview = await review.save();
+
+//   // Update the avgRating in the Restaurant model
+//   const allReviews = await Review.find({ restaurantId });
+//   const totalRating = allReviews.reduce((sum, r) => sum + r.rate, rate);
+//   const avgRating = totalRating / (allReviews.length + 1);
+
+//   await Restaurant.findByIdAndUpdate(
+//     restaurantId,
+//     { avgRating },
+//     { new: true },
+//   );
+
+//   res.status(201).json({
+//     status: "success",
+//     message: "Review created successfully",
+//     review: newReview,
+//   });
+
+//   // Flag the review as negative or positive
+//   flagReview(comment, newReview._id);
+// };
 export const createReview = async (req, res, next) => {
   const { reservationId, comment, rate } = req.body;
 
+  // Validate request body
   if (!reservationId || !rate) {
     return next(new ErrorClass("Reservation ID and rate are required", 400));
   }
 
+  // Verify reservation
   const reservation = await Reservation.findById(reservationId);
   if (!reservation) {
     return next(new ErrorClass("Reservation not found", 404));
   }
 
+  // Ensure the user is authorized
   if (reservation.userId.toString() !== req.authUser._id.toString()) {
     return next(new ErrorClass("Unauthorized to review this reservation", 403));
   }
 
+  // Ensure reservation is completed
   if (reservation.status !== "completed") {
-    return next(
-      new ErrorClass("Cannot review a reservation that is not completed", 400),
-    );
+    return next(new ErrorClass("Cannot review a reservation that is not completed", 400));
   }
 
+  // Check if a review already exists for the same reservation
   const existingReview = await Review.findOne({ reservationId });
   if (existingReview) {
-    return next(
-      new ErrorClass("You have already reviewed this reservation", 400),
-    );
+    return next(new ErrorClass("You have already reviewed this reservation", 400));
   }
 
   const restaurantId = reservation.restaurantId;
 
+  // Create a new review document
   const review = new Review({
     userId: req.authUser._id,
     reservationId,
@@ -47,26 +110,24 @@ export const createReview = async (req, res, next) => {
     rate,
   });
 
+  // Save review
   const newReview = await review.save();
 
   // Update the avgRating in the Restaurant model
   const allReviews = await Review.find({ restaurantId });
-  const totalRating = allReviews.reduce((sum, r) => sum + r.rate, rate);
-  const avgRating = totalRating / (allReviews.length + 1);
+  const totalRating = allReviews.reduce((sum, r) => sum + r.rate, 0);
+  const avgRating = allReviews.length ? totalRating / allReviews.length : 0;
 
-  await Restaurant.findByIdAndUpdate(
-    restaurantId,
-    { avgRating },
-    { new: true },
-  );
+  await Restaurant.findByIdAndUpdate(restaurantId, { avgRating }, { new: true });
 
+  // Return response
   res.status(201).json({
     status: "success",
     message: "Review created successfully",
     review: newReview,
   });
 
-  // Flag the review as negative or positive
+  // Flag the review as negative or positive based on comment analysis
   flagReview(comment, newReview._id);
 };
 /**
@@ -100,11 +161,7 @@ export const updateReview = async (req, res, next) => {
   const totalRating = allReviews.reduce((sum, r) => sum + r.rate, 0);
   const avgRating = totalRating / allReviews.length;
 
-  await Restaurant.findByIdAndUpdate(
-    review.restaurantId,
-    { avgRating },
-    { new: true },
-  );
+  await Restaurant.findByIdAndUpdate(review.restaurantId, { avgRating }, { new: true });
 
   res.status(200).json({
     status: "success",
@@ -123,23 +180,11 @@ export const deleteReview = async (req, res, next) => {
   const review = await Review.findById(id);
 
   if (!review) {
-    return next(
-      new ErrorClass(
-        "Review not found",
-        404,
-        "The requested review does not exist",
-      ),
-    );
+    return next(new ErrorClass("Review not found", 404, "The requested review does not exist"));
   }
 
   if (review.userId.toString() !== req.authUser._id.toString()) {
-    return next(
-      new ErrorClass(
-        "Unauthorized",
-        403,
-        "You can only delete your own reviews",
-      ),
-    );
+    return next(new ErrorClass("Unauthorized", 403, "You can only delete your own reviews"));
   }
 
   await Review.findByIdAndDelete(id);
@@ -175,8 +220,7 @@ export const getAllReviewsForRestaurant = async (req, res, next) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    const avgRating =
-      await Restaurant.findById(restaurantObjectId).select("avgRating");
+    const avgRating = await Restaurant.findById(restaurantObjectId).select("avgRating");
 
     const ratings = await Review.aggregate([
       {

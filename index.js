@@ -32,8 +32,6 @@ app.use(globalResponse);
 
 db_connection();
 
-app.get("/", (req, res) =>
-  res.send("Hello To the Restaurant reservation system!"),
-);
+app.get("/", (req, res) => res.send("Hello To the Restaurant reservation system!"));
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

@@ -28,18 +28,14 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     status: "reserved",
   });
   if (existingReservation) {
-    return res
-      .status(400)
-      .json({ message: "Table is already reserved for this time slot" });
+    return res.status(400).json({ message: "Table is already reserved for this time slot" });
   }
 
   if (mealId && Array.isArray(mealId)) {
     const mealValidationPromises = mealId.map(async (item) => {
       const meal = await Meal.findOne({ _id: item.meal, restaurantId });
       if (!meal) {
-        throw new Error(
-          `Meal with ID ${item.meal} not found or does not belong to this restaurant`,
-        );
+        throw new Error(`Meal with ID ${item.meal} not found or does not belong to this restaurant`);
       }
       return true;
     });
@@ -94,9 +90,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
     });
 
     if (existingReservation) {
-      return res
-        .status(400)
-        .json({ message: "Table is already reserved for the selected time" });
+      return res.status(400).json({ message: "Table is already reserved for the selected time" });
     }
   }
 
@@ -107,9 +101,7 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
         restaurantId: reservation.restaurantId,
       });
       if (!meal) {
-        throw new Error(
-          `Meal with ID ${item.meal} not found or does not belong to this restaurant`,
-        );
+        throw new Error(`Meal with ID ${item.meal} not found or does not belong to this restaurant`);
       }
       return true;
     });
@@ -149,8 +141,8 @@ import { ErrorClass } from "../../Utils/error-class.utils.js";
       new ErrorClass(
         "Reservation not found or unauthorized",
         404,
-        "Invalid reservation ID or you do not own this reservation",
-      ),
+        "Invalid reservation ID or you do not own this reservation"
+      )
     );
   }
 
@@ -168,19 +160,11 @@ export const getAllReservationsForRestaurant = async (req, res, next) => {
 
   const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) {
-    return next(
-      new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"),
-    );
+    return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
   }
 
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(
-      new ErrorClass(
-        "Unauthorized",
-        403,
-        "You are not the owner of this restaurant",
-      ),
-    );
+    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
   const reservations = await Reservation.find({ restaurantId })
@@ -205,41 +189,21 @@ export const updateReservationStatus = async (req, res, next) => {
   const { status } = req.body;
 
   if (!["canceled", "completed"].includes(status)) {
-    return next(
-      new ErrorClass(
-        "Invalid status value",
-        400,
-        "Status must be 'canceled' or 'completed'",
-      ),
-    );
+    return next(new ErrorClass("Invalid status value", 400, "Status must be 'canceled' or 'completed'"));
   }
 
   const reservation = await Reservation.findById(id).populate("restaurantId");
   if (!reservation) {
-    return next(
-      new ErrorClass("Reservation not found", 404, "Invalid reservation ID"),
-    );
+    return next(new ErrorClass("Reservation not found", 404, "Invalid reservation ID"));
   }
 
   const restaurant = reservation.restaurantId;
   if (!restaurant) {
-    return next(
-      new ErrorClass(
-        "Restaurant not found",
-        404,
-        "Restaurant associated with this reservation is invalid",
-      ),
-    );
+    return next(new ErrorClass("Restaurant not found", 404, "Restaurant associated with this reservation is invalid"));
   }
 
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(
-      new ErrorClass(
-        "Unauthorized",
-        403,
-        "You are not the owner of this restaurant",
-      ),
-    );
+    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
   reservation.status = status;
@@ -286,8 +250,7 @@ export const getAllReservationsForUser = async (req, res, next) => {
   const filteredReservations = reservations.filter(
     (reservation) =>
       reservation.userId.toString() === req.authUser._id.toString() ||
-      reservation.restaurantId.ownedBy.toString() ===
-        req.authUser._id.toString(),
+      reservation.restaurantId.ownedBy.toString() === req.authUser._id.toString()
   );
 
   if (!filteredReservations.length) {
@@ -320,13 +283,7 @@ export const getSpecificReservation = async (req, res, next) => {
     reservation.userId.toString() !== req.authUser._id.toString() &&
     reservation.restaurantId.ownedBy.toString() !== req.authUser._id.toString()
   ) {
-    return next(
-      new ErrorClass(
-        "Unauthorized",
-        403,
-        "You are not authorized to view this reservation",
-      ),
-    );
+    return next(new ErrorClass("Unauthorized", 403, "You are not authorized to view this reservation"));
   }
 
   res.status(200).json({
@@ -350,13 +307,7 @@ export const getReservationsByDayForRestaurant = async (req, res, next) => {
   }
 
   if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(
-      new ErrorClass(
-        "Unauthorized",
-        403,
-        "You are not the owner of this restaurant",
-      ),
-    );
+    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
   }
 
   const reservations = await Reservation.find({
