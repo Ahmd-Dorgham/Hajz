@@ -12,8 +12,8 @@ export const signUp = async (req, res, next) => {
   if (!password) return next(new ErrorClass("Password is required", 400));
   if (!email) return next(new ErrorClass("Email is required", 400));
 
-  const isEmailExists = await User.findOne({ email });
-  if (isEmailExists) return next(new ErrorClass("Email already exists", 400));
+  // const isEmailExists = await User.findOne({ email });
+  // if (isEmailExists) return next(new ErrorClass("Email already exists", 400));
 
   let image = null;
   if (req.file) {
