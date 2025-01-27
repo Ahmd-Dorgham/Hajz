@@ -12,8 +12,8 @@ export const signUp = async (req, res, next) => {
   if (!password) return next(new ErrorClass("Password is required", 400));
   if (!email) return next(new ErrorClass("Email is required", 400));
 
-  // const isEmailExists = await User.findOne({ email });
-  // if (isEmailExists) return next(new ErrorClass("Email already exists", 400));
+  const isEmailExists = await User.findOne({ email });
+  if (isEmailExists) return next(new ErrorClass("Email already exists", 400));
 
   let image = null;
   if (req.file) {
@@ -46,12 +46,12 @@ export const signUp = async (req, res, next) => {
     html: `<a href='${process.env.DOMAIN}users/verify/${token}'>Click here to confirm your email</a>`,
   });
 
-  // const newUser = await userInstance.save();
+  const newUser = await userInstance.save();
 
   res.status(201).json({
     status: "success",
     message: "User created successfully",
-    // user: newUser,
+    user: newUser,
   });
 };
 /**
