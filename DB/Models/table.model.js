@@ -38,11 +38,11 @@ const tableSchema = new Schema(
 
 tableSchema.pre("findOneAndDelete", async function (next) {
   const tableId = this.getQuery()._id;
-
   await Reservation.deleteMany({ tableId });
-
   next();
 });
 
-const Table = model("Table", tableSchema);
-export default mongoose.models.Table || Table;
+tableSchema.index({ restaurantId: 1, tableNumber: 1 }, { unique: true });
+
+const Table = mongoose.models.Table || model("Table", tableSchema);
+export default Table;

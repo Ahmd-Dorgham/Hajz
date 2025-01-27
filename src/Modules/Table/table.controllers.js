@@ -6,54 +6,57 @@ import Reservation from "../../../DB/Models/reservation.model.js";
 /**
  * @api {POST} /tables/create Create a new Table
  */
-
 export const createTable = async (req, res, next) => {
-  const { restaurantId, tableNumber, capacity } = req.body;
+  try {
+    const { restaurantId, tableNumber, capacity } = req.body;
 
-  if (!restaurantId || !tableNumber || !capacity) {
-    return next(new ErrorClass("All fields are required", 400, "Missing required fields"));
-  }
-
-  const restaurant = await Restaurant.findById(restaurantId);
-  if (!restaurant) {
-    return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
-  }
-
-  if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
-    return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
-  }
-
-  const existingTable = await Table.findOne({ restaurantId, tableNumber });
-  if (existingTable) {
-    return next(new ErrorClass("Table number already exists", 400, "Duplicate table number"));
-  }
-
-  let image = null;
-  if (req.file) {
-    try {
-      const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
-        folder: "Restaurant/tableImages",
-      });
-      image = { secure_url, public_id };
-    } catch (error) {
-      return next(new ErrorClass("Image upload failed", 500, error.message));
+    if (!restaurantId || !tableNumber || !capacity) {
+      return next(new ErrorClass("All fields are required", 400, "Missing required fields"));
     }
+
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) {
+      return next(new ErrorClass("Restaurant not found", 404, "Invalid restaurant ID"));
+    }
+
+    if (restaurant.ownedBy.toString() !== req.authUser._id.toString()) {
+      return next(new ErrorClass("Unauthorized", 403, "You are not the owner of this restaurant"));
+    }
+
+    const existingTable = await Table.findOne({ restaurantId, tableNumber });
+    if (existingTable) {
+      return next(new ErrorClass("Table number already exists", 400, "Duplicate table number"));
+    }
+
+    let image = null;
+    if (req.file) {
+      try {
+        const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(req.file.path, {
+          folder: "Restaurant/tableImages",
+        });
+        image = { secure_url, public_id };
+      } catch (error) {
+        return next(new ErrorClass("Image upload failed", 500, error.message));
+      }
+    }
+
+    const tableInstance = new Table({
+      restaurantId,
+      tableNumber,
+      capacity,
+      image,
+    });
+
+    const newTable = await tableInstance.save();
+
+    res.status(201).json({
+      status: "success",
+      message: "Table created successfully",
+      data: newTable,
+    });
+  } catch (error) {
+    return next(new ErrorClass(error.message, 500, error));
   }
-
-  const tableInstance = new Table({
-    restaurantId,
-    tableNumber,
-    capacity,
-    image,
-  });
-
-  const newTable = await tableInstance.save();
-
-  res.status(201).json({
-    status: "success",
-    message: "Table created successfully",
-    data: newTable,
-  });
 };
 
 /**
