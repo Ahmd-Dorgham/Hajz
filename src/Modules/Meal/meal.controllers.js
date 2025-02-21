@@ -2,8 +2,6 @@ import Meal from "../../../DB/Models/meal.model.js";
 import Restaurant from "../../../DB/Models/restaurant.model.js";
 import Reservation from "../../../DB/Models/reservation.model.js";
 import { cloudinaryConfig } from "../../Utils/cloudinary.utils.js";
-import predictMealService from "../../Services/predict-meal-service.js";
-import { undefined } from "webidl-conversions";
 
 /**
  * @api {POST} /meals/create  Create a new Meal
@@ -141,23 +139,11 @@ import { undefined } from "webidl-conversions";
 
   const skip = (pagination.page - 1) * pagination.limit;
 
-  let predictedMealsNames = [];
-  let meals = [];
-  if (search) {
-    predictedMealsNames = await predictMealService(search);
-    meals = await Meal.find({
-      name: { $in: predictedMealsNames },
-      restaurantId,
-    })
-      .skip(skip)
-      .limit(pagination.limit);
-  } else {
-    meals = await Meal.find({
-      restaurantId,
-    })
-      .skip(skip)
-      .limit(pagination.limit);
-  }
+  const meals = await Meal.find({
+    restaurantId,
+  })
+    .skip(skip)
+    .limit(pagination.limit);
 
   res.status(200).json({
     status: "success",
